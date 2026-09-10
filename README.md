@@ -6,6 +6,9 @@
 
 三端产出口径完全一致：Power BI 看板（6 页 / 85 个 DAX 度量值）、ECharts 单文件 HTML 看板（离线可开）、DuckDB SQL 脚本（可复跑）。
 
+> **在线交互看板**：https://l1ght1nk.github.io/olist-ecommerce-bi/
+> 浏览器直接打开，无需下载、无需安装任何东西。
+
 ## 项目结构
 
 ```
@@ -27,7 +30,8 @@ olist_bi/
 ├── 01_探查结果.txt          各字段缺失率与分布探查记录
 ├── 02_清洗建模日志.txt       清洗规则与建模决策记录
 ├── Olist主题.json           Power BI 自定义配色主题
-└── Olist电商运营分析看板.html  最终交付物（12MB，双击即开）
+├── Olist电商运营分析看板.html  看板成品（12MB，双击即开）
+└── index.html              GitHub Pages 入口，与上一份内容一致
 ```
 
 ## 数据流水线
@@ -47,7 +51,7 @@ olist_bi/
 ```bash
 pip install pandas duckdb
 python 02_clean_model.py        # 生成 output/*.csv
-python 04_build_dashboard.py    # 生成 Olist电商运营分析看板.html
+python 04_build_dashboard.py    # 渲染看板 HTML，并同步产出 index.html
 python run_sql.py               # SQL 复刻并与 pandas 对账
 ```
 

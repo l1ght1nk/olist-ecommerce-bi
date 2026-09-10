@@ -19,3 +19,9 @@ dst = os.path.join(BASE, 'Olist电商运营分析看板.html')
 with io.open(dst, 'w', encoding='utf-8') as f:
     f.write(html)
 print(f"生成：{dst}  ({os.path.getsize(dst)/1024/1024:.2f} MB)")
+
+# 同步产出 index.html，作为 GitHub Pages 的入口（内容与上者完全一致）
+idx = os.path.join(BASE, 'index.html')
+with io.open(idx, 'w', encoding='utf-8') as f:
+    f.write(html)
+print(f"同步：{idx}  (GitHub Pages 入口)")
