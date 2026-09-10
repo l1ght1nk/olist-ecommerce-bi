@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+envs/
+
+# 中间数据产物（可由 01~06 脚本从 Kaggle 原始数据重新生成，不入版本库）
+output/fact_orders.csv
+output/fact_order_items.csv
+output/fact_compact.json
+output/dim_customer.csv
+output/dim_product.csv
+output/dim_geolocation.csv
+
+# DuckDB 数据库文件
+*.duckdb
+*.duckdb.wal
+
+# Power BI 临时文件
+*.pbix
+~$*
+*.tmp
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

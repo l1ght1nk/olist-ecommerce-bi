@@ -1,0 +1,82 @@
+======================================================================
+1. 读取原始数据
+原始行数：orders=99441 items=112650 customers=99441 products=32951 sellers=3095 reviews=99224 payments=103886 geo=1000163
+
+======================================================================
+2. 字段类型与命名规范化
+  列名规范化完成（修正 product_name_lenght / product_description_lenght 拼写）
+  日期字段转 datetime 完成
+
+======================================================================
+3. 数据质量检查与清洗
+
+-- 3.1 缺失值检查
+  orders.order_approved_at: 160 行缺失 (0.16%)
+  orders.order_delivered_carrier_date: 1783 行缺失 (1.79%)
+  orders.order_delivered_customer_date: 2965 行缺失 (2.98%)
+  products.product_category_name: 610 行缺失 (1.85%)
+  products.product_name_length: 610 行缺失 (1.85%)
+  products.product_description_length: 610 行缺失 (1.85%)
+  products.product_photos_qty: 610 行缺失 (1.85%)
+  products.product_weight_g: 2 行缺失 (0.01%)
+  products.product_length_cm: 2 行缺失 (0.01%)
+  products.product_height_cm: 2 行缺失 (0.01%)
+  products.product_width_cm: 2 行缺失 (0.01%)
+  reviews.review_comment_title: 87656 行缺失 (88.34%)
+  reviews.review_comment_message: 58247 行缺失 (58.70%)
+
+-- 3.2 重复值检查
+  orders.order_id 重复=0  items(order_id+item_id) 重复=0  customers.customer_id 重复=0
+
+-- 3.3 异常值检查（金额）
+  price: min=0.85 max=6735.0 P99=890.00
+  freight_value: min=0.0 max=409.68 P99=84.52
+
+-- 3.4 时间窗完整性
+  数据时间跨度：2016-09-04 21:15:19 ~ 2018-10-17 17:30:18
+  完整月区间：2017-01 ~ 2018-08
+  样本量异常月份（平台爬坡期 / 数据截断）：['2016-09(4单)', '2016-10(324单)', '2016-12(1单)', '2018-09(16单)', '2018-10(4单)']
+
+======================================================================
+4. 构建维度表
+  dim_date: 1096 行 (2016-01-01 ~ 2018-12-31)
+
+  RFM 基准日（数据集最后一天）= 2018-10-17 17:30:18
+  dim_customer(unique 粒度): 96096 行，复购客户 2801 人 (复购率 2.91%)
+  dim_product: 32951 行，72 个品类（英文）
+  dim_seller: 3095 行
+  dim_geolocation: 19015 行（由 1,000,163 行聚合）
+
+======================================================================
+5. 构建事实表
+  fact_orders: 99441 行，99441 个订单
+  fact_order_items: 112650 行
+
+======================================================================
+6. 导出 CSV（utf-8-sig，Power BI 中文不乱码）
+  dim_date.csv     1,096 行 × 12 列  (0.1 MB)
+  dim_customer.csv    96,096 行 × 15 列  (12.9 MB)
+  dim_product.csv    32,951 行 × 13 列  (4.0 MB)
+  dim_seller.csv     3,095 行 × 4 列  (0.2 MB)
+  dim_geolocation.csv    19,015 行 × 5 列  (1.1 MB)
+  fact_orders.csv    99,441 行 × 23 列  (25.8 MB)
+  fact_order_items.csv   112,650 行 × 12 列  (22.9 MB)
+
+  数据质量与清洗记录.csv 已导出
+
+-- 关键口径快照
+  数据时间范围: ['2016-09-04 21:15:19', '2018-10-17 17:30:18']
+  总订单数: 99441
+  已交付订单数: 96478
+  交付完成率: 97.02
+  真实客户数(unique): 96096
+  复购率%: 2.91
+  总GMV(已交付,含运费): 15419773.75
+  AOV客单价: 159.83
+  ARPU: 160.46
+  平均交付天数: 12.56
+  准时率%: 91.89
+  平均评分: 4.09
+  订单明细行数: 112650
+  品类数: 72
+  卖家数: 3095

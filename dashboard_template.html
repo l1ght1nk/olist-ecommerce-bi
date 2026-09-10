@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>Olist 巴西电商运营分析看板（可交互切片版）</title>
+<script>/*__ECHARTS__*/</script>
+<style>
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:"Segoe UI","Microsoft YaHei",sans-serif;background:#f5f6f8;color:#1f2329;}
+  header{background:linear-gradient(100deg,#2f6f3e,#3d8b52);color:#fff;padding:18px 28px 0;}
+  header h1{margin:0;font-size:22px;font-weight:600;}
+  header .meta{font-size:12.5px;opacity:.92;margin-top:6px;}
+  nav{display:flex;gap:4px;margin-top:14px;flex-wrap:wrap;}
+  nav button{background:rgba(255,255,255,.14);border:none;color:#fff;padding:9px 18px;border-radius:8px 8px 0 0;
+    cursor:pointer;font-size:13.5px;font-family:inherit;transition:.15s;}
+  nav button:hover{background:rgba(255,255,255,.26);}
+  nav button.active{background:#f5f6f8;color:#2f6f3e;font-weight:600;}
+
+  /* ===== 切片器面板 ===== */
+  #slicer{position:sticky;top:0;z-index:40;background:#fff;border-bottom:1px solid #e6e8eb;
+    box-shadow:0 2px 8px rgba(0,0,0,.04);padding:10px 28px;display:flex;gap:22px;align-items:flex-start;flex-wrap:wrap;}
+  .sl{display:flex;flex-direction:column;gap:5px;}
+  .sl-lab{font-size:11px;color:#374151;font-weight:600;letter-spacing:.3px;}
+  .chips{display:flex;gap:6px;}
+  .chips button{border:1px solid #d7dbdf;background:#fff;color:#3a3f45;padding:5px 13px;border-radius:16px;
+    cursor:pointer;font-size:12.5px;font-family:inherit;transition:.12s;}
+  .chips button:hover{border-color:#2f6f3e;}
+  .chips button.on{background:#2f6f3e;color:#fff;border-color:#2f6f3e;font-weight:600;}
+  select#slCat{border:1px solid #d7dbdf;border-radius:8px;padding:6px 10px;font-size:12.5px;font-family:inherit;background:#fff;min-width:170px;}
+  #slStateBtn{border:1px solid #d7dbdf;background:#fff;color:#3a3f45;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:12.5px;font-family:inherit;}
+  #slStateBtn:hover{border-color:#2f6f3e;}
+  .pop{display:none;position:absolute;background:#fff;border:1px solid #e0e3e7;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.12);
+    padding:8px 10px;max-height:300px;overflow:auto;width:200px;z-index:60;}
+  .pop.show{display:block;}
+  .pop label{display:flex;align-items:center;gap:7px;font-size:12.5px;padding:3px 4px;cursor:pointer;border-radius:5px;}
+  .pop label:hover{background:#f1f5f1;}
+  .pop .pop-foot{border-top:1px solid #eee;margin-top:6px;padding-top:6px;display:flex;gap:8px;}
+  .pop .pop-foot button{font-size:11.5px;color:#2f6f3e;background:none;border:none;cursor:pointer;text-decoration:underline;}
+  #slReset{border:1px solid #c0504d;background:#fff;color:#c0504d;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:12.5px;font-family:inherit;align-self:center;}
+  #slReset:hover{background:#c0504d;color:#fff;}
+  #filterInfo{font-size:12px;color:#374151;align-self:center;}
+  #filterInfo b{color:#2f6f3e;}
+
+  .wrap{padding:20px 28px 60px;}
+  .page{display:none;} .page.active{display:block;}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:12px;margin-bottom:16px;}
+  .kpi{background:#fff;border:1px solid #e6e8eb;border-radius:10px;padding:14px 16px;}
+  .kpi .lab{font-size:12px;color:#374151;}
+  .kpi .val{font-size:23px;font-weight:650;color:#2f6f3e;margin-top:3px;letter-spacing:-.3px;}
+  .kpi .sub{font-size:11.5px;color:#374151;margin-top:2px;}
+  .grid{display:grid;gap:14px;margin-bottom:14px;}
+  .g2{grid-template-columns:repeat(2,1fr);} .g3{grid-template-columns:repeat(3,1fr);}
+  .g23{grid-template-columns:2fr 1fr;} .g32{grid-template-columns:1fr 2fr;}
+  .card{background:#fff;border:1px solid #e6e8eb;border-radius:10px;padding:14px 16px 8px;}
+  .card h3{margin:0 0 2px;font-size:14px;color:#1f2329;font-weight:600;}
+  .card .note{font-size:11.5px;color:#374151;margin-bottom:6px;}
+  .chart{width:100%;height:300px;}
+  .chart.tall{height:380px;} .chart.short{height:250px;}
+  @media(max-width:1180px){.g3,.g23,.g32,.g2{grid-template-columns:1fr;}}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  th,td{border-bottom:1px solid #eef0f2;padding:6px 8px;text-align:left;}
+  th{color:#374151;font-weight:600;background:#fafbfc;}
+  td.num{text-align:right;font-variant-numeric:tabular-nums;}
+  .ins{background:#fff;border:1px solid #e6e8eb;border-left:4px solid #2f6f3e;border-radius:8px;padding:12px 16px;margin-bottom:10px;font-size:13.5px;line-height:1.7;}
+  .ins b{color:#2f6f3e;}
+  .ins.warn{border-left-color:#c0504d;} .ins.warn b{color:#c0504d;}
+  .ins.good{border-left-color:#3d8b52;} .ins.good b{color:#3d8b52;}
+  .sec{font-size:15px;font-weight:650;margin:22px 0 10px;color:#2f6f3e;border-left:4px solid #2f6f3e;padding-left:9px;}
+  .tag{display:inline-block;background:#eef5f0;color:#2f6f3e;border-radius:11px;padding:1px 9px;font-size:11.5px;margin-right:5px;}
+  .hint{font-size:11.5px;color:#374151;margin:-2px 0 6px;}
+  .hint b{color:#2f6f3e;}
+  footer{padding:16px 28px;color:#374151;font-size:12px;border-top:1px solid #e6e8eb;background:#fff;}
+  #errbar{display:none;background:#c0504d;color:#fff;padding:10px 28px;font-size:13px;}
+</style>
+</head>
+<body>
+<header>
+  <h1>Olist 巴西电商运营分析看板</h1>
+  <div class="meta" id="metaLine"></div>
+  <nav id="nav"></nav>
+</header>
+
+<!-- ===== 切片器（Power BI 风格） ===== -->
+<div id="slicer">
+  <div class="sl">
+    <span class="sl-lab">年份切片器</span>
+    <div class="chips" id="slYear"></div>
+  </div>
+  <div class="sl">
+    <span class="sl-lab">品类切片器</span>
+    <select id="slCat"></select>
+  </div>
+  <div class="sl" style="position:relative">
+    <span class="sl-lab">州切片器（可多选）</span>
+    <button id="slStateBtn">选择州…</button>
+    <div class="pop" id="slStatePop"></div>
+  </div>
+  <button id="slReset">重置全部筛选</button>
+  <div id="filterInfo"></div>
+</div>
+<div id="errbar"></div>
+
+<div class="wrap">
+
+<!-- ===================== 页面1 运营总览 ===================== -->
+<section class="page active" id="p0">
+  <div class="kpis" id="kpi0"></div>
+  <div class="grid g23">
+    <div class="card"><h3>月度 GMV 与订单量趋势</h3>
+      <div class="note">灰色区间为数据不完整月份（平台爬坡期 / 数据截断），不参与同比解读</div>
+      <div class="chart tall" id="c_m_trend"></div></div>
+    <div class="card"><h3>订单状态构成</h3>
+      <div class="note">交付完成率 = 已送达订单 / 全部订单</div>
+      <div class="chart tall" id="c_status"></div></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h3>每日订单量（含 7 日均线）</h3>
+      <div class="note">反映平台日运营规模与波动，2017-11 黑五出现峰值</div>
+      <div class="chart" id="c_daily"></div></div>
+    <div class="card"><h3>各州 GMV TOP10</h3>
+      <div class="note">按客户所在州统计（已交付订单，含运费）。<b>点击柱条可下钻/取消该州</b></div>
+      <div class="chart" id="c_state"></div></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h3>州 GMV 明细</h3>
+      <div class="note">人均订单数 = 订单数 / 客户数，反映区域购买强度</div>
+      <div style="max-height:300px;overflow:auto"><table id="t_state"></table></div></div>
+    <div class="card"><h3>客单价 AOV 与 ARPU 月度走势</h3>
+      <div class="note">AOV = GMV/订单数，ARPU = GMV/客户数；两者几乎重合 → 复购极低</div>
+      <div class="chart" id="c_aov"></div></div>
+  </div>
+</section>
+
+<!-- ===================== 页面2 客户行为 ===================== -->
+<section class="page" id="p1">
+  <div class="kpis" id="kpi1"></div>
+  <div class="grid g23">
+    <div class="card"><h3>MAU / DAU 与用户粘性</h3>
+      <div class="note">粘性 = 月均 DAU / MAU。电商低频消费，粘性天然偏低，看趋势而非绝对值</div>
+      <div class="chart tall" id="c_mau"></div></div>
+    <div class="card"><h3>新老客订单占比</h3>
+      <div class="note">新客 = 该订单是客户首单；老客 = 复购订单</div>
+      <div class="chart tall" id="c_newold"></div></div>
+  </div>
+  <div class="grid g3">
+    <div class="card"><h3>支付方式占比</h3><div class="note">按订单主支付方式（金额最大的一笔）</div>
+      <div class="chart short" id="c_pay"></div></div>
+    <div class="card"><h3>分期期数分布</h3><div class="note">巴西市场特色：信用卡分期</div>
+      <div class="chart short" id="c_inst"></div></div>
+    <div class="card"><h3>客户下单时段分布</h3><div class="note">24 小时下单量</div>
+      <div class="chart short" id="c_hour"></div></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h3>下单星期分布</h3><div class="note">周末下单量明显低于工作日</div>
+      <div class="chart short" id="c_week"></div></div>
+    <div class="card"><h3>客户购买次数分布</h3>
+      <div class="note">纵轴为对数刻度；绝大多数客户仅购买 1 次</div>
+      <div class="chart short" id="c_repeat"></div></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h3>RFM 客户价值分群</h3>
+      <div class="note">柱=客户数占比，折线=GMV 占比。冠军客户以高占比贡献高 GMV</div>
+      <div class="chart tall" id="c_rfm"></div></div>
+    <div class="card"><h3>RFM 分群明细</h3>
+      <div class="note">R=最近购买间隔，F=购买次数，M=消费金额</div>
+      <div style="max-height:300px;overflow:auto"><table id="t_rfm"></table></div></div>
+  </div>
+  <div class="grid g3">
+    <div class="card"><h3>R 值分布（近期度）</h3><div class="note">5=最近有购买，1=最久未购买</div>
+      <div class="chart short" id="c_r_score"></div></div>
+    <div class="card"><h3>F 值分布（频次）</h3><div class="note">1=1单 3=2单 5=3单及以上</div>
+      <div class="chart short" id="c_f_score"></div></div>
+    <div class="card"><h3>M 值分布（金额）</h3><div class="note">按消费金额五分位</div>
+      <div class="chart short" id="c_m_score"></div></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h3>客户城市分布 TOP15</h3><div class="note">按客户数</div>
+      <div class="chart" id="c_city"></div></div>
+    <div class="card"><h3>各州客户数与人均订单</h3><div class="note">识别高潜力区域</div>
+      <div style="max-height:300px;overflow:auto"><table id="t_state_cust"></table></div></div>
+  </div>
+</section>
+
+<!-- ===================== 页面3 商品分析 ===================== -->
+<section class="page" id="p2">
+  <div class="kpis" id="kpi2"></div>
+  <div class="grid g2">
+    <div class="card"><h3>品类销量 TOP15（件数）</h3><div class="note">走量品类。<b>点击柱条可下钻/取消该品类</b></div>
+      <div class="chart tall" id="c_cat_qty"></div></div>
+    <div class="card"><h3>品类销售额 TOP15（雷亚尔）</h3><div class="note">金额贡献品类</div>
+      <div class="chart tall" id="c_cat_gmv"></div></div>
+  </div>
+  <div class="grid g23">
+    <div class="card"><h3>品类矩阵：销售额 × 销量</h3>
+      <div class="note">右上=明星品类（高销高金额）；右下=高价低频；左上=低价走量。气泡大小=GMV</div>
+      <div class="chart tall" id="c_cat_matrix"></div></div>
+    <div class="card"><h3>品类 GMV 集中度</h3><div class="note">TOP10 品类累计占比</div>
+      <div class="chart tall" id="c_cat_pareto"></div></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h3>商品销量 TOP10</h3><div class="note">按销售件数</div>
+      <div style="max-height:320px;overflow:auto"><table id="t_pq"></table></div></div>
+    <div class="card"><h3>商品销售额 TOP10</h3><div class="note">按销售金额</div>
+      <div style="max-height:320px;overflow:auto"><table id="t_pg"></table></div></div>
+  </div>
+  <div class="sec">商品页面内容分析（商品目录级，不随切片器变化）</div>
+  <div class="grid g2">
+    <div class="card"><h3>商品图片数量 vs 平均销量</h3>
+      <div class="note">柱=商品款数，线=该图片数商品的平均销量。图片越多，动销越好</div>
+      <div class="chart" id="c_photo"></div></div>
+    <div class="card"><h3>商品描述长度 vs 平均销量</h3>
+      <div class="note">按描述字符数分档</div>
+      <div class="chart" id="c_desc"></div></div>
+  </div>
+  <div class="grid g32">
+    <div class="card"><h3>已售 vs 零销量商品的页面内容对比</h3>
+      <div class="note">对比两组商品的平均图片数、描述长度、标题长度</div>
+      <div class="chart" id="c_sold"></div></div>
+    <div class="card"><h3>品类运费占比</h3>
+      <div class="note">运费 / 销售额。大件品类运费侵蚀严重</div>
+      <div class="chart" id="c_freight"></div></div>
+  </div>
+</section>
+
+<!-- ===================== 页面4 履约与卖家 ===================== -->
+<section class="page" id="p3">
+  <div class="kpis" id="kpi3"></div>
+  <div class="grid g2">
+    <div class="card"><h3>配送时长分布</h3><div class="note">下单到送达天数</div>
+      <div class="chart" id="c_deliv_band"></div></div>
+    <div class="card"><h3>延误情况分布</h3>
+      <div class="note">延误 = 实际送达晚于承诺日期；负值表示提前</div>
+      <div class="chart" id="c_delay_band"></div></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h3>配送时效 vs 客户评分（核心发现）</h3>
+      <div class="note">柱=平均评分，线=1 星差评占比。超过 20 天后差评率陡增</div>
+      <div class="chart tall" id="c_deliv_score"></div></div>
+    <div class="card"><h3>是否延误 vs 评分</h3>
+      <div class="note">延误订单 1 星率远高于准时订单</div>
+      <div class="chart tall" id="c_late_score"></div></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h3>卖家 GMV TOP15</h3><div class="note">平台 TOP10% 卖家贡献大部分 GMV</div>
+      <div class="chart" id="c_seller"></div></div>
+    <div class="card"><h3>卖家地域分布</h3><div class="note">卖家高度集中于圣保罗州</div>
+      <div class="chart" id="c_seller_state"></div></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h3>客户评分分布</h3><div class="note">两极分化：5 星与 1 星占比均高</div>
+      <div class="chart" id="c_review"></div></div>
+    <div class="card"><h3>各州交付完成率</h3><div class="note">低于 95% 的州需重点排查</div>
+      <div class="chart" id="c_state_dl"></div></div>
+  </div>
+</section>
+
+<!-- ===================== 页面5 节假日与大促 ===================== -->
+<section class="page" id="p4">
+  <div class="kpis" id="kpi5"></div>
+  <div class="hint">本页为 <b>2017 黑五与节假日专项分析</b>（固定口径，不受全局筛选影响，顶部切片器在本页已隐藏）。</div>
+  <!-- 节日选择器 -->
+  <div style="margin-bottom:12px">
+    <span class="sl-lab" style="font-size:12px;color:#374151;margin-right:8px">📅 选择节日查看详情：</span>
+    <div id="holChips" style="display:inline-flex;flex-wrap:wrap;gap:5px"></div>
+  </div>
+  <div id="holDetail" style="display:none;background:#fff;border:1px solid #e6e8eb;border-left:4px solid #2f6f3e;border-radius:8px;padding:12px 16px;margin-bottom:10px;font-size:13px;line-height:1.7"></div>
+  <div class="grid g23">
+    <div class="card"><h3>黑五前后 41 天日订单量</h3>
+      <div class="note">2017-11-04 ~ 2017-12-15，红色竖线为黑五当天（11-24）</div>
+      <div class="chart tall" id="c_bf_series"></div></div>
+    <div class="card"><h3>节日效应：节前 / 当天 / 节后 uplift</h3>
+      <div class="note">取当天 uplift 前 12 名节日；相对基线（同月或节前 45-8 日非窗口日）的日均订单变化 %，全部 20 个节日见右表</div>
+      <div class="chart tall" id="c_hol_all"></div></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h3>黑五周维度对比</h3>
+      <div class="note">柱=日均订单，线=日均 GMV；后两周仍高于黑五前一周，未见透支</div>
+      <div class="chart" id="c_bf_weeks"></div></div>
+    <div class="card"><h3>黑五当天 vs 11 月日常</h3>
+      <div class="note">客单价略降但分期期数与信用卡占比上升 → 靠降低支付门槛放量</div>
+      <div class="chart" id="c_bf_compare"></div></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h3>黑五当周品类结构变化</h3>
+      <div class="note">正值=黑五占比提升（耐用品/实用品），负值=占比下降（冲动消费品）</div>
+      <div class="chart" id="c_bf_cat"></div></div>
+    <div class="card"><h3>节日效应明细</h3>
+      <div class="note">基线口径见「基线来源」列；11 月节日密集，基线取节前 45-8 日</div>
+      <div style="max-height:320px;overflow:auto"><table id="t_hol"></table></div></div>
+  </div>
+  <div class="sec">大促与节假日结论</div>
+  <div id="hol_insights"></div>
+</section>
+
+<!-- ===================== 页面6 管理层摘要 ===================== -->
+<section class="page" id="p5">
+  <div class="kpis" id="kpi4"></div>
+  <div class="sec">核心发现 Key Insights（基于全量口径）</div>
+  <div id="insights"></div>
+  <div class="sec">业务建议 Recommendations</div>
+  <div id="recos"></div>
+  <div class="sec">关键指标一览（随切片器联动）</div>
+  <div class="grid g2">
+    <div class="card"><h3>州 GMV TOP8</h3><div class="chart" id="c_sum_state"></div></div>
+    <div class="card"><h3>品类 GMV TOP8</h3><div class="chart" id="c_sum_cat"></div></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h3>RFM 分群 GMV 贡献</h3><div class="chart" id="c_sum_rfm"></div></div>
+    <div class="card"><h3>月度 GMV 趋势</h3><div class="chart" id="c_sum_trend"></div></div>
+  </div>
+</section>
+
+</div>
+<footer id="foot"></footer>
+
+<script>
+const FACT = /*__FACT__*/;
+const DATA = /*__DATA__*/;
+
+/* ---------------- 维度与字段索引 ---------------- */
+const D = FACT.dim;
+const STATES=D.states, CATS=D.cats, PAYS=D.pays, STS=D.statuses, CITIES=D.cities,
+      SELLERS=D.sellers, SELLER_ST=D.seller_states, PRODUCTS=D.products, SEGS=D.segments, YM=D.ym;
+const YM_META={}; YM.forEach(x=>YM_META[x[0]]={y:x[1],complete:!!x[2]});
+const I={DATE:0,STATE:1,CAT:2,UID:3,OID:4,PRICE:5,FREIGHT:6,DELIV:7,DELIVD:8,LATE:9,DELAY:10,
+         REVIEW:11,PAY:12,INST:13,HOUR:14,WDAY:15,NEW:16,STATUS:17,CITY:18,SELLER:19,PROD:20,RFM:21,RS:22,FS:23,MS:24};
+
+const STATE_CN={'SP':'圣保罗 SP','RJ':'里约热内卢 RJ','MG':'米纳斯吉拉斯 MG','RS':'南里奥格兰德 RS',
+'PR':'巴拉那 PR','SC':'圣卡塔琳娜 SC','BA':'巴伊亚 BA','DF':'联邦区 DF','ES':'圣埃斯皮里图 ES',
+'GO':'戈亚斯 GO','PE':'伯南布哥 PE','CE':'塞阿拉 CE','PA':'帕拉 PA','MT':'马托格罗索 MT',
+'MA':'马拉尼昂 MA','MS':'南马托格罗索 MS','PB':'帕拉伊巴 PB','RN':'北里奥格兰德 RN',
+'AL':'阿拉戈斯 AL','PI':'皮奥伊 PI','SE':'塞尔希培 SE','TO':'托坎廷斯 TO','AC':'阿克里 AC',
+'AM':'亚马逊 AM','AP':'阿马帕 AP','RO':'朗多尼亚 RO','RR':'罗赖马 RR'};
+const CAT_CN={'health_beauty':'健康美容','watches_gifts':'手表礼品','bed_bath_table':'床品浴室',
+'sports_leisure':'运动休闲','computers_accessories':'电脑配件','furniture_decor':'家居装饰',
+'housewares':'家居用品','cool_stuff':'潮流好物','perfumery':'香水','garden_tools':'园艺工具',
+'telephony':'手机通讯','toys':'玩具','baby':'母婴用品','auto':'汽车用品','office_furniture':'办公家具',
+'electronics':'消费电子','books_general_interest':'综合图书','stationery':'文具办公',
+'fixed_telephony':'固定电话','books_technical':'技术图书','home_appliances':'大家电',
+'small_appliances':'小家电','consoles_games':'游戏主机','air_conditioning':'空调',
+'musical_instruments':'乐器','furniture_living_room':'客厅家具','home_comfort':'家居舒适',
+'audio':'音频设备','construction_tools_construction':'建筑工具','home_construction':'家装建材',
+'furniture_bedroom':'卧室家具','fashion_bags_accessories':'箱包配饰','pet_shop':'宠物用品',
+'books_imported':'进口图书','cds_dvds_musicals':'音乐影碟','dvds_blu_ray':'蓝光DVD',
+'party_supplies':'派对用品','christmas_supplies':'圣诞用品','fashion_shoes':'鞋靴',
+'fashion_male_clothing':'男装','fashion_underwear_beach':'内衣泳装','fashion_sport':'运动服饰',
+'flowers':'鲜花','arts_and_craftmanship':'手工艺品','food':'食品','food_drink':'食品饮料',
+'drink':'饮料','la_cuisine':'厨房用品','industry_commerce_and_business':'工商用品',
+'signaling_and_security':'信号安防','security_and_services':'安保服务',
+'tablets_printing_image':'平板影像','computers':'电脑整机',
+'small_appliances_home_oven_and_coffee':'厨用小家电','fashion_childrens_clothes':'童装',
+'luggage_accessories':'行李箱包','kitchen_dining_laundry_garden_furniture':'厨餐家具',
+'construction_tools_lights':'建筑照明','books_imported':'进口图书','fashion_female_clothing':'女装',
+'agro_industry_and_commerce':'农业与工商业','unknown':'未知','home_confort':'家居舒适',
+'diapers_and_hygiene':'纸尿裤与卫生用品','costruction_tools_garden':'园艺工具','art':'艺术品',
+'construction_tools_safety':'施工安全','cine_photo':'摄影摄像','drinks':'饮品','market_place':'集市','music':'音乐',
+'home_appliances_2':'大家电2','fashio_female_clothing':'女装','home_comfort_2':'家居舒适2',
+'furniture_mattress_and_upholstery':'床垫软装','costruction_tools_tools':'工具类'};
+const PAY_CN={'credit_card':'信用卡','boleto':'银行票据 Boleto','voucher':'代金券','debit_card':'借记卡','not_defined':'未定义'};
+const STATUS_CN={'approved':'已审核','canceled':'已取消','created':'已创建','delivered':'已交付','invoiced':'已开票','processing':'处理中','shipped':'已发货','unavailable':'不可用'};
+const cn_state = x => STATE_CN[x] || STATE_CN[STATES[x]] || STATES[x] || x;
+const cn_cat   = x => CAT_CN[x] || CAT_CN[CATS[x]] || CATS[x] || x;
+const cn_pay   = x => PAY_CN[x] || PAY_CN[PAYS[x]] || PAYS[x] || x;
+const cn_status= x => STATUS_CN[x] || STATUS_CN[STS[x]] || STS[x] || x;
+const cn_seg   = s => (s||'').slice(3);
+
+const fmt  = n => (n==null||isNaN(n)) ? '-' : Number(n).toLocaleString('en-US',{maximumFractionDigits:0});
+const fmt2 = n => (n==null||isNaN(n)) ? '-' : Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const pct  = n => (n==null||isNaN(n)) ? '-' : Number(n).toFixed(1)+'%';
+const ymDisp = ym => {const s=''+ym; return s.slice(0,4)+'-'+s.slice(4);};
+const dateDisp = d => {const s=''+d; return s.slice(0,4)+'-'+s.slice(4,6)+'-'+s.slice(6,8);};
+const mean = a => a.length ? a.reduce((x,y)=>x+y,0)/a.length : 0;
+const sum  = a => a.reduce((x,y)=>x+y,0);
+
+/* ---------------- 颜色 ---------------- */
+const C = {green:'#2f6f3e',light:'#7fb069',blue:'#4a90d9',orange:'#e8a33d',red:'#c0504d',
+           gray:'#9aa1a9',purple:'#8e6bb5',teal:'#3aa8a0'};
+const AXIS = {axisLine:{lineStyle:{color:'#dfe3e8'}},axisLabel:{color:'#1f2937',fontSize:11},
+              splitLine:{lineStyle:{color:'#f0f2f4'}}};
+
+/* ---------------- 切片器状态 ---------------- */
+const FILTER = {year:'all', states:new Set(), cats:new Set()};
+function pass(r){
+  return (FILTER.year==='all' || (r[I.DATE]/10000|0)===FILTER.year)
+      && (FILTER.states.size===0 || FILTER.states.has(r[I.STATE]))
+      && (FILTER.cats.size===0   || FILTER.cats.has(r[I.CAT]));
+}
+
+/* =========================================================
+   聚合引擎：依据 FILTER 从 11 万行事实表实时计算所有数据集
+   ========================================================= */
+function compute(){
+  const rows = FACT.rows.filter(pass);
+  const del = [];
+  for(let i=0;i<rows.length;i++) if(rows[i][I.DELIV]===1) del.push(rows[i]);
+
+  // 订单级首条映射（去重）
+  const orderAll = new Map(), orderDel = new Map();
+  for(let i=0;i<rows.length;i++){const o=rows[i][I.OID]; if(!orderAll.has(o))orderAll.set(o,rows[i]);}
+  for(let i=0;i<del.length;i++){const o=del[i][I.OID]; if(!orderDel.has(o))orderDel.set(o,del[i]);}
+  const delOrders = [...orderDel.values()];
+  const allOrders = [...orderAll.values()];
+
+  const A = {kpi:{}, monthly_trend:[], daily_orders:[], order_status:[],
+    state_gmv:[], mau_dau:[], new_vs_old:[], payment:[], installments:[], hour_dist:[],
+    weekday_dist:[], repeat_dist:[], repeat_stats:{}, rfm_segment:[],
+    rfm_r_score_dist:[], rfm_f_score_dist:[], rfm_m_score_dist:[], city_top:[],
+    category:[], category_top_qty:[], category_top_gmv:[], product_top_qty:[], product_top_gmv:[],
+    delivery_band:[], delay_band:[], delivery_vs_score:[], late_vs_score:[],
+    seller_top:[], seller_state:[], seller_concentration:{}, review_dist:[], state_delivery:[]};
+
+  if(rows.length===0){ return emptyA(A); }
+
+  /* ---- KPI ---- */
+  let gmv=0; const gmvOrders=new Set(), gmvCust=new Set();
+  for(const r of del){ gmv+=r[I.PRICE]+r[I.FREIGHT]; gmvOrders.add(r[I.OID]); gmvCust.add(r[I.UID]); }
+  const totalOrders=new Set(allOrders.map(o=>o[I.OID]));
+  const delivOrders=new Set(delOrders.map(o=>o[I.OID]));
+  A.kpi = {
+    gmv: gmv/100, orders: delivOrders.size, customers: gmvCust.size,
+    aov: delivOrders.size? gmv/100/delivOrders.size:0,
+    arpu: gmvCust.size? gmv/100/gmvCust.size:0,
+    items_sold: del.length,
+    delivery_rate: totalOrders.size? delivOrders.size/totalOrders.size*100:0,
+    avg_delivery_days: mean(delOrders.map(o=>o[I.DELIVD]/10)),
+    on_time_rate: delOrders.length? delOrders.filter(o=>o[I.LATE]===0).length/delOrders.length*100:0,
+    avg_review: mean(delOrders.filter(o=>o[I.REVIEW]>0).map(o=>o[I.REVIEW])),
+    date_min: dateDisp(Math.min(...rows.map(r=>r[I.DATE]))),
+    date_max: dateDisp(Math.max(...rows.map(r=>r[I.DATE])))
+  };
+
+  /* ---- 月度趋势 ---- */
+  const mG=new Map(),mO=new Map(),mC=new Map();
+  for(const r of del){const ym=r[I.DATE]/100|0; mG.set(ym,(mG.get(ym)||0)+r[I.PRICE]+r[I.FREIGHT]);
+    if(!mO.has(ym))mO.set(ym,new Set()); mO.get(ym).add(r[I.OID]);
+    if(!mC.has(ym))mC.set(ym,new Set()); mC.get(ym).add(r[I.UID]);}
+  const months = YM.filter(x=>FILTER.year==='all'||x[1]===FILTER.year).map(x=>x[0]);
+  A.monthly_trend = months.map(ym=>{const g=mG.get(ym)||0,o=mO.get(ym),c=mC.get(ym);
+    const orders=o?o.size:0,cust=c?c.size:0;
+    return {ym:ymDisp(ym),gmv:g/100,orders,customers:cust,aov:orders?g/100/orders:0,is_complete:!!YM_META[ym].complete};});
+
+  /* ---- 每日订单 ---- */
+  const dO=new Map();
+  for(const r of del){const d=r[I.DATE]; if(!dO.has(d))dO.set(d,new Set()); dO.get(d).add(r[I.OID]);}
+  A.daily_orders=[...dO.entries()].sort((a,b)=>a[0]-b[0]).map(([d,s])=>({date:dateDisp(d),orders:s.size}));
+  for(let i=0;i<A.daily_orders.length;i++){let s=0,c=0;for(let j=Math.max(0,i-6);j<=i;j++){s+=A.daily_orders[j].orders;c++;}A.daily_orders[i].ma7=+(s/c).toFixed(1);}
+
+  /* ---- 订单状态 ---- */
+  const stCnt=new Map();
+  for(const r of allOrders){const s=r[I.STATUS]; stCnt.set(s,(stCnt.get(s)||0)+1);}
+  A.order_status = STS.map((name,idx)=>({order_status:name,orders:stCnt.get(idx)||0})).filter(x=>x.orders>0);
+
+  /* ---- 州 GMV ---- */
+  const sG=new Map(),sO=new Map(),sC=new Map();
+  for(const r of del){const s=r[I.STATE]; sG.set(s,(sG.get(s)||0)+r[I.PRICE]+r[I.FREIGHT]);
+    if(!sO.has(s))sO.set(s,new Set()); sO.get(s).add(r[I.OID]);
+    if(!sC.has(s))sC.set(s,new Set()); sC.get(s).add(r[I.UID]);}
+  const totalGmv=sum([...sG.values()])/100;
+  A.state_gmv = STATES.map((name,idx)=>{const o=sO.get(idx),c=sC.get(idx);const orders=o?o.size:0,cust=c?c.size:0;
+    const g=sG.get(idx)||0; return {customer_state:name,code:idx,gmv:g/100,orders,customers:cust,
+      aov:orders?g/100/orders:0, gmv_share:totalGmv?g/100/totalGmv*100:0,
+      orders_per_customer:orders&&cust?orders/cust:0};}).filter(x=>x.gmv>0).sort((a,b)=>b.gmv-a.gmv);
+
+  /* ---- MAU/DAU ---- */
+  const mU=new Map(), mUD=new Map();
+  for(const r of del){const ym=r[I.DATE]/100|0; if(!mU.has(ym))mU.set(ym,new Set()); mU.get(ym).add(r[I.UID]);
+    if(!mUD.has(ym))mUD.set(ym,{}); const dd=r[I.DATE]; if(!mUD.get(ym)[dd])mUD.get(ym)[dd]=new Set(); mUD.get(ym)[dd].add(r[I.UID]);}
+  A.mau_dau = months.map(ym=>{const u=mU.get(ym), dayMap=mUD.get(ym); const mau=u?u.size:0;
+    let dau=0,n=0; if(dayMap){for(const d in dayMap){dau+=dayMap[d].size;n++;}} dau=n?dau/n:0;
+    return {ym:ymDisp(ym),mau,dau:+dau.toFixed(1),stickiness:mau?+((dau/mau)*100).toFixed(2):0,is_complete:!!YM_META[ym].complete};});
+
+  /* ---- 新老客 ---- */
+  const nO=new Map(),nC=new Map();
+  for(const r of del){const ym=r[I.DATE]/100|0; if(!nO.has(ym)){nO.set(ym,[0,0]);}
+    if(r[I.NEW]===1)nO.get(ym)[0]++; else nO.get(ym)[1]++;}
+  A.new_vs_old = months.map(ym=>{const v=nO.get(ym)||[0,0];const tot=v[0]+v[1];
+    return {ym:ymDisp(ym),new_orders:v[0],old_orders:v[1],new_pct:tot?+(v[0]/tot*100).toFixed(1):0,is_complete:!!YM_META[ym].complete};});
+
+  /* ---- 支付 / 分期 / 时段 / 星期（订单级去重）---- */
+  const payC=new Map(),instC=new Map(),hrC=new Map(),wkC=new Map();
+  for(const r of delOrders){payC.set(r[I.PAY],(payC.get(r[I.PAY])||0)+1);
+    instC.set(r[I.INST],(instC.get(r[I.INST])||0)+1);
+    hrC.set(r[I.HOUR],(hrC.get(r[I.HOUR])||0)+1);
+    wkC.set(r[I.WDAY],(wkC.get(r[I.WDAY])||0)+1);}
+  A.payment = PAYS.map((name,idx)=>({main_payment_type:name,orders:payC.get(idx)||0})).filter(x=>x.orders>0);
+  A.installments = [...instC.entries()].filter(([n])=>n<=12).sort((a,b)=>a[0]-b[0]).map(([n,v])=>({n,orders:v}));
+  A.hour_dist = [...hrC.entries()].sort((a,b)=>a[0]-b[0]).map(([h,v])=>({purchase_hour:h,orders:v}));
+  const WK=['周一','周二','周三','周四','周五','周六','周日'];
+  A.weekday_dist = WK.map((name,idx)=>({name,orders:wkC.get(idx)||0}));
+
+  /* ---- 复购 ---- */
+  const uo=new Map();
+  for(const r of delOrders){const u=r[I.UID]; if(!uo.has(u))uo.set(u,new Set()); uo.get(u).add(r[I.OID]);}
+  const cnt=new Map();
+  for(const s of uo.values()){const k=s.size; cnt.set(k,(cnt.get(k)||0)+1);}
+  A.repeat_dist=[]; let mc=0; for(const [k,v] of cnt){A.repeat_dist.push({orders:k,customers:v}); if(k>mc)mc=k;}
+  A.repeat_dist.sort((a,b)=>a.orders-b.orders);
+  const totC=uo.size, repC=[...uo.values()].filter(s=>s.size>=2).length;
+  A.repeat_stats={total_customers:totC,repeat_customers:repC,
+    repeat_rate:totC?+(repC/totC*100).toFixed(2):0, avg_orders:totC?+(delOrders.length/totC).toFixed(2):0, max_orders:mc};
+
+  /* ---- RFM ---- */
+  const segG=new Map(),segC=new Map(),totSegCust=new Set();
+  for(const r of del){const s=r[I.RFM]; if(!segC.has(s)){segC.set(s,new Set());segG.set(s,0);}
+    segG.set(s,segG.get(s)+r[I.PRICE]+r[I.FREIGHT]); segC.get(s).add(r[I.UID]); totSegCust.add(r[I.UID]);}
+  const totSegGmv=sum([...segG.values()])/100;
+  A.rfm_segment=SEGS.map((name,idx)=>{const c=segC.get(idx),g=segG.get(idx)||0;const cust=c?c.size:0;
+    return {RFM_segment:name,customers:cust,gmv:g/100,
+      gmv_share:totSegGmv?g/100/totSegGmv*100:0,
+      cust_share:totSegCust.size?cust/totSegCust.size*100:0,
+      aov:cust?g/100/cust:0};}).filter(x=>x.customers>0).sort((a,b)=>a.RFM_segment.localeCompare(b.RFM_segment));
+  A.rfm_r_score_dist=[1,2,3,4,5].map(s=>({R_score:s,customers:[...delOrders].filter(o=>o[I.RS]===s).length}));
+  A.rfm_f_score_dist=[1,2,3,4,5].map(s=>({F_score:s,customers:[...delOrders].filter(o=>o[I.FS]===s).length}));
+  A.rfm_m_score_dist=[1,2,3,4,5].map(s=>({M_score:s,customers:[...delOrders].filter(o=>o[I.MS]===s).length}));
+
+  /* ---- 城市 TOP15 ---- */
+  const cG=new Map(),cC=new Map();
+  for(const r of del){const c=r[I.CITY]; cG.set(c,(cG.get(c)||0)+r[I.PRICE]+r[I.FREIGHT]);
+    if(!cC.has(c))cC.set(c,new Set()); cC.get(c).add(r[I.UID]);}
+  A.city_top=CITIES.map((name,idx)=>({customer_city:name,customers:cC.get(idx)?cC.get(idx).size:0,gmv:(cG.get(idx)||0)/100}))
+    .filter(x=>x.customers>0).sort((a,b)=>b.customers-a.customers).slice(0,15);
+
+  /* ---- 品类 ---- */
+  const catG=new Map(),catQ=new Map(),catFr=new Map();
+  for(const r of del){const c=r[I.CAT]; catG.set(c,(catG.get(c)||0)+r[I.PRICE]); catQ.set(c,(catQ.get(c)||0)+1);
+    catFr.set(c,(catFr.get(c)||0)+r[I.FREIGHT]);}
+  const totCatG=sum([...catG.values()])/100;
+  A.category=CATS.map((name,idx)=>{const g=catG.get(idx)||0,q=catQ.get(idx)||0;
+    return {product_category_name_english:name,code:idx,gmv:g/100,qty:q,
+      gmv_share:totCatG?g/100/totCatG*100:0,
+      freight_pct:g?catFr.get(idx)/g*100:0};}).filter(x=>x.qty>0).sort((a,b)=>b.gmv-a.gmv);
+  A.category_top_qty=[...A.category].sort((a,b)=>b.qty-a.qty).slice(0,15);
+  A.category_top_gmv=A.category.slice(0,15);
+
+  /* ---- 商品 TOP（用明细行累计）---- */
+  const pG=new Map(),pQ=new Map(),pC=new Map();
+  for(const r of del){const p=r[I.PROD]; pG.set(p,(pG.get(p)||0)+r[I.PRICE]); pQ.set(p,(pQ.get(p)||0)+1);
+    if(!pC.has(p))pC.set(p,r[I.CAT]);}
+  const prod=A.category.length?PRODUCTS.map((id,idx)=>({product_id:id,gmv:(pG.get(idx)||0)/100,qty:pQ.get(idx)||0,cat:pC.get(idx)})).filter(x=>x.qty>0):[];
+  prod.sort((a,b)=>b.qty-a.qty); A.product_top_qty=prod.slice(0,10);
+  prod.sort((a,b)=>b.gmv-a.gmv); A.product_top_gmv=prod.slice(0,10);
+
+  /* ---- 配送/延误分布 ---- */
+  function band(v,bins,labels){for(let i=0;i<labels.length;i++){if(v<bins[i+1])return labels[i];}return labels[labels.length-1];}
+  const dBins=[0,3,5,7,10,14,21,30,1000], dLab=['0-3天','4-5天','6-7天','8-10天','11-14天','15-21天','22-30天','30天以上'];
+  const yBins=[-100,0,3,7,10,15,20,30,1000], yLab=['提前/准时','1-3天','4-7天','8-10天','11-15天','16-20天','21-30天','30天以上'];
+  const db=new Map(),yb=new Map();
+  for(const r of delOrders){const k=band(r[I.DELIVD]/10,dBins,dLab); db.set(k,(db.get(k)||0)+1);
+    const k2=band(r[I.DELAY]/10,yBins,yLab); yb.set(k2,(yb.get(k2)||0)+1);}
+  A.delivery_band=dLab.map(l=>({band:l,cnt:db.get(l)||0}));
+  A.delay_band=yLab.map(l=>({band:l,cnt:yb.get(l)||0}));
+
+  const vsBins=[0,5,10,15,20,1000], vsLab=['0-5天','6-10天','11-15天','16-20天','20天以上'];
+  const vsM=new Map();
+  for(const r of delOrders){if(r[I.REVIEW]<=0)continue; const k=band(r[I.DELIVD]/10,vsBins,vsLab);
+    if(!vsM.has(k))vsM.set(k,{s:0,n:0,one:0}); const o=vsM.get(k); o.s+=r[I.REVIEW];o.n++; if(r[I.REVIEW]===1)o.one++;}
+  A.delivery_vs_score=vsLab.map(l=>{const o=vsM.get(l); return {band:l,avg_score:o?+(o.s/o.n).toFixed(2):0,
+    pct_1star:o?+(o.one/o.n*100).toFixed(1):0,cnt:o?o.n:0};});
+
+  const lateM=new Map();
+  for(const r of delOrders){if(r[I.REVIEW]<=0)continue; const k=r[I.LATE]?'延迟送达':'准时/提前';
+    if(!lateM.has(k))lateM.set(k,{s:0,n:0,one:0}); const o=lateM.get(k); o.s+=r[I.REVIEW];o.n++; if(r[I.REVIEW]===1)o.one++;}
+  A.late_vs_score=['准时/提前','延迟送达'].map(k=>{const o=lateM.get(k); return {is_late:k,
+    avg_score:o?+(o.s/o.n).toFixed(2):0,pct_1star:o?+(o.one/o.n*100).toFixed(1):0};});
+
+  const rvM=new Map();
+  for(const r of delOrders){if(r[I.REVIEW]<=0)continue; rvM.set(r[I.REVIEW],(rvM.get(r[I.REVIEW])||0)+1);}
+  const rvTot=sum([...rvM.values()]);
+  A.review_dist=[1,2,3,4,5].map(s=>({review_score:s,orders:rvM.get(s)||0,pct:rvTot?+(rvM.get(s)||0)/rvTot*100:0}));
+
+  /* ---- 卖家 ---- */
+  const seG=new Map(),seO=new Map(),seQ=new Map();
+  for(const r of del){const s=r[I.SELLER]; seG.set(s,(seG.get(s)||0)+r[I.PRICE]); seQ.set(s,(seQ.get(s)||0)+1);
+    if(!seO.has(s))seO.set(s,new Set()); seO.get(s).add(r[I.OID]);}
+  const sellerArr=SELLERS.map((id,idx)=>({seller_id:id,gmv:(seG.get(idx)||0)/100,orders:seO.get(idx)?seO.get(idx).size:0,
+    qty:seQ.get(idx)||0,state:SELLER_ST[idx]})).filter(x=>x.gmv>0).sort((a,b)=>b.gmv-a.gmv);
+  A.seller_top=sellerArr.slice(0,15);
+  A.seller_concentration={total_sellers:sellerArr.length,top10pct_sellers:Math.round(sellerArr.length*0.1),
+    top10pct_gmv_share:sellerArr.length?+(sellerArr.slice(0,Math.round(sellerArr.length*0.1)).reduce((a,b)=>a+b.gmv,0)/sellerArr.reduce((a,b)=>a+b.gmv,0)*100).toFixed(1):0};
+  const seStM=new Map();
+  for(const s of sellerArr){seStM.set(s.state,(seStM.get(s.state)||0)+1);}
+  A.seller_state=[...seStM.entries()].map(([k,v])=>({seller_state:k,sellers:v})).sort((a,b)=>b.sellers-a.sellers);
+
+  /* ---- 各州交付率 ---- */
+  const sdT=new Map(),sdD=new Map(),sdDays=new Map();
+  for(const r of allOrders){const s=r[I.STATE]; if(!sdT.has(s))sdT.set(s,new Set()); sdT.get(s).add(r[I.OID]);}
+  for(const r of delOrders){const s=r[I.STATE]; if(!sdD.has(s))sdD.set(s,new Set()); sdD.get(s).add(r[I.OID]);
+    if(!sdDays.has(s))sdDays.set(s,[]); sdDays.get(s).push(r[I.DELIVD]/10);}
+  A.state_delivery=STATES.map((name,idx)=>{const t=sdT.get(idx),d=sdD.get(idx),days=sdDays.get(idx);
+    const total=t?t.size:0, deliv=d?d.size:0; return {customer_state:name,code:idx,total_orders:total,delivered:deliv,
+      delivery_rate:total?deliv/total*100:0,avg_delivery_days:days?mean(days):0};}).filter(x=>x.total_orders>=500)
+    .sort((a,b)=>a.delivery_rate-b.delivery_rate);
+
+  return A;
+}
+function emptyA(A){A.kpi={gmv:0,orders:0,customers:0,aov:0,arpu:0,items_sold:0,delivery_rate:0,
+  avg_delivery_days:0,on_time_rate:0,avg_review:0,date_min:'-',date_max:'-'}; return A;}
+
+/* =========================================================
+   渲染层
+   ========================================================= */
+const CH={}; window._CH=CH;
+function chart(id,opt,group){
+  let c=CH[id];
+  if(!c){ c=echarts.init(document.getElementById(id)); if(group)c.group=group; CH[id]=c; }
+  // 筛选过窄导致全部 series 为空时，给出空状态提示（同 Power BI 空视觉体验）
+  const sr=opt.series||[];
+  if(sr.length&&sr.every(s=>!Array.isArray(s.data)||s.data.length===0)){
+    opt.title={text:'当前筛选下无数据',left:'center',top:'middle',
+      textStyle:{fontSize:13,color:'#374151',fontWeight:'normal'}};
+  }
+  c.setOption(opt,true);
+}
+
+/* KPI */
+function kpiBox(el,items){document.getElementById(el).innerHTML=items.map(i=>
+  `<div class="kpi"><div class="lab">${i[0]}</div><div class="val">${i[1]}</div><div class="sub">${i[2]||''}</div></div>`).join('');}
+
+function renderAll(){
+  let A;
+  try{ A=compute(); }
+  catch(e){ showErr('计算异常：'+e.message); console.error(e); return; }
+  LAST=A;
+
+  kpiBox('kpi0',[
+    ['总 GMV','R$ '+fmt(A.kpi.gmv),'已交付订单，含运费'],
+    ['订单量',fmt(A.kpi.orders),'已交付订单数'],
+    ['客单价 AOV','R$ '+fmt2(A.kpi.aov),'GMV / 订单数'],
+    ['ARPU','R$ '+fmt2(A.kpi.arpu),'GMV / 客户数'],
+    ['交付完成率',pct(A.kpi.delivery_rate),'已送达 / 全部订单'],
+    ['平均配送时长',fmt2(A.kpi.avg_delivery_days)+' 天','下单到送达'],
+    ['准时率',pct(A.kpi.on_time_rate),'未晚于承诺日期'],
+    ['平均评分',fmt2(A.kpi.avg_review),'满分 5 分'],
+  ]);
+
+  // 月度趋势
+  const mt=A.monthly_trend;
+  chart('c_m_trend',{
+    tooltip:{trigger:'axis'},
+    legend:{data:['GMV','订单量'],top:0,textStyle:{fontSize:11}},
+    grid:{left:70,right:60,top:35,bottom:52},
+    xAxis:{type:'category',data:mt.map(d=>d.ym),...AXIS,axisLabel:{color:'#1f2937',fontSize:11,rotate:45,hideOverlap:true}},
+    yAxis:[{type:'value',name:'GMV',...AXIS,axisLabel:{color:'#1f2937',formatter:v=>fmt(v/1000000)+'M',fontSize:11}},
+           {type:'value',name:'订单量',...AXIS,axisLabel:{color:'#1f2937',fontSize:11}}],
+    series:[
+      {name:'GMV',type:'bar',data:mt.map(d=>d.gmv),itemStyle:{color:C.green},
+       markArea:{silent:true,itemStyle:{color:'rgba(130,130,130,.10)'},data:mt.map((d,i)=>
+          d.is_complete?null:[{xAxis:i-0.5},{xAxis:i+0.5}]).filter(Boolean)}},
+      {name:'订单量',type:'line',yAxisIndex:1,data:mt.map(d=>d.orders),smooth:true,
+       itemStyle:{color:C.orange},lineStyle:{width:2}}
+    ]
+  },'g_p1');
+  // 订单状态
+  chart('c_status',{
+    tooltip:{trigger:'item',formatter:p=>`${p.name}<br/>${fmt(p.value)} 单 (${p.percent}%)`},
+    legend:{bottom:0,textStyle:{fontSize:11}},
+    series:[{type:'pie',radius:['38%','62%'],center:['50%','44%'],
+      data:A.order_status.map(d=>({name:cn_status(d.order_status),value:d.orders})),
+      itemStyle:{borderColor:'#fff',borderWidth:2},
+      color:[C.green,C.blue,C.red,C.orange,C.gray,C.light,C.purple,C.teal],
+      label:{formatter:'{b}\n{d}%',fontSize:11}}]
+  });
+  // 每日订单（时间轴：自动均匀分布日期刻度）
+  const dl=A.daily_orders;
+  chart('c_daily',{
+    tooltip:{trigger:'axis',
+      formatter:p=>{const d=p[0].value[0]; return d+'<br/>'+p.map(s=>`${s.marker}${s.seriesName}: ${fmt(s.value[1])}`).join('<br/>');}},
+    legend:{data:['日订单量','7日均线'],top:0,textStyle:{fontSize:11}},
+    grid:{left:55,right:20,top:32,bottom:48},
+    xAxis:{type:'time',...AXIS,
+      axisLabel:{color:'#1f2937',fontSize:11,formatter:'{yyyy}-{MM}'}},
+    yAxis:{type:'value',...AXIS,axisLabel:{color:'#1f2937',fontSize:11}},
+    dataZoom:[{type:'inside'},{type:'slider',height:14,bottom:8}],
+    series:[
+      {name:'日订单量',type:'line',data:dl.map(d=>[d.date,d.orders]),itemStyle:{color:'#b8d4c4'},
+       lineStyle:{width:1},symbol:'none',
+       markLine:{silent:true,symbol:'none',lineStyle:{color:'#c0504d',width:1,type:'dashed',opacity:.65},
+         label:{formatter:p=>p.name,fontSize:10,color:'#c0504d',position:'insideStartTop'},
+         data:(DATA.holiday_marks||[]).filter(h=>['黑色星期五','圣诞节','元旦','母亲节','父亲节','儿童节/圣母显现日','狂欢节'].includes(h.name))
+                .map(h=>({xAxis:h.date,name:h.name}))}},
+      {name:'7日均线',type:'line',data:dl.map(d=>[d.date,d.ma7]),itemStyle:{color:C.green},
+       lineStyle:{width:2.2},symbol:'none',smooth:true}
+    ]
+  });
+  // 州 GMV（可点击下钻）
+  const st10=A.state_gmv.slice(0,10).reverse();
+  chart('c_state',{
+    tooltip:{trigger:'axis',formatter:p=>`${cn_state(p[0].data.code)}<br/>GMV R$ ${fmt(p[0].value)}<br/>占比 ${pct(p[0].data.share)}`},
+    grid:{left:110,right:60,top:12,bottom:24},
+    xAxis:{type:'value',...AXIS,axisLabel:{color:'#1f2937',formatter:v=>fmt(v/1000000)+'M',fontSize:11}},
+    yAxis:{type:'category',data:st10.map(d=>cn_state(d.code)),...AXIS,axisLabel:{color:'#1f2937',fontSize:11}},
+    series:[{type:'bar',data:st10.map(d=>({value:d.gmv,code:d.code,share:d.gmv_share,
+        itemStyle:{color:FILTER.states.has(d.code)?C.orange:C.green,borderRadius:[0,4,4,0]}})),
+      label:{show:true,position:'right',formatter:p=>pct(p.data.share),fontSize:10,color:'#1f2937'}}]
+  });
+  // AOV/ARPU
+  const mtc=mt.filter(d=>d.is_complete);
+  chart('c_aov',{
+    tooltip:{trigger:'axis'},
+    legend:{data:['AOV 客单价','ARPU'],top:0,textStyle:{fontSize:11}},
+    grid:{left:55,right:20,top:32,bottom:44},
+    xAxis:{type:'category',data:mtc.map(d=>d.ym),...AXIS,axisLabel:{color:'#1f2937',fontSize:11,rotate:45,hideOverlap:true}},
+    yAxis:{type:'value',...AXIS,axisLabel:{color:'#1f2937',formatter:'R$ {value}',fontSize:11}},
+    series:[
+      {name:'AOV 客单价',type:'line',data:mtc.map(d=>+d.aov.toFixed(2)),smooth:true,itemStyle:{color:C.green}},
+      {name:'ARPU',type:'line',data:mtc.map(d=>+(d.gmv/d.customers).toFixed(2)),smooth:true,itemStyle:{color:C.blue}}
+    ]
+  },'g_p1');
+  // 州明细表
+  document.getElementById('t_state').innerHTML =
+    '<tr><th>州</th><th class="num">GMV</th><th class="num">占比</th><th class="num">订单</th><th class="num">客户</th><th class="num">AOV</th><th class="num">人均单量</th></tr>'+
+    A.state_gmv.slice(0,15).map(d=>`<tr><td>${cn_state(d.code)}</td><td class="num">${fmt(d.gmv)}</td>
+     <td class="num">${pct(d.gmv_share)}</td><td class="num">${fmt(d.orders)}</td><td class="num">${fmt(d.customers)}</td>
+     <td class="num">${fmt2(d.aov)}</td><td class="num">${fmt2(d.orders_per_customer)}</td></tr>`).join('');
+
+  /* ---------- 页面2 ---------- */
+  const rs=A.repeat_stats;
+  kpiBox('kpi1',[
+    ['客户总数',fmt(rs.total_customers),'真实客户 unique_id'],
+    ['复购率',pct(rs.repeat_rate),fmt(rs.repeat_customers)+' 人复购'],
+    ['新客订单占比',pct(A.new_vs_old.filter(d=>d.is_complete).slice(-6).reduce((a,b)=>a+b.new_orders,0)/
+                        (A.new_vs_old.filter(d=>d.is_complete).slice(-6).reduce((a,b)=>a+b.new_orders+b.old_orders,0)||1)*100),'近 6 个完整月'],
+    ['月活 MAU',fmt(A.mau_dau.filter(d=>d.is_complete).slice(-1)[0]?.mau||0),'最新完整月'],
+    ['日均活 DAU',fmt(A.mau_dau.filter(d=>d.is_complete).slice(-1)[0]?.dau||0),'月内日均'],
+    ['DAU/MAU 粘性',pct(A.mau_dau.filter(d=>d.is_complete).slice(-1)[0]?.stickiness||0),'低频电商品类正常区间'],
+    ['平均购买次数',fmt2(rs.avg_orders),'人均订单数'],
+    ['最高购买次数',rs.max_orders+' 次','单客户最多'],
+  ]);
+  const md=A.mau_dau;
+  chart('c_mau',{
+    tooltip:{trigger:'axis'},
+    legend:{data:['MAU 月活','月均 DAU','粘性 %'],top:0,textStyle:{fontSize:11}},
+    grid:{left:60,right:55,top:35,bottom:48},
+    xAxis:{type:'category',data:md.map(d=>d.ym),...AXIS,axisLabel:{color:'#1f2937',fontSize:11,rotate:45,hideOverlap:true}},
+    yAxis:[{type:'value',name:'用户数',...AXIS,axisLabel:{color:'#1f2937',fontSize:11}},
+           {type:'value',name:'粘性%',...AXIS,axisLabel:{color:'#1f2937',fontSize:11}}],
+    series:[
+      {name:'MAU 月活',type:'bar',data:md.map(d=>d.mau),itemStyle:{color:C.green}},
+      {name:'月均 DAU',type:'bar',data:md.map(d=>Math.round(d.dau)),itemStyle:{color:C.light}},
+      {name:'粘性 %',type:'line',yAxisIndex:1,data:md.map(d=>+d.stickiness.toFixed(2)),
+       itemStyle:{color:C.orange},smooth:true,symbolSize:5}
+    ]
+  },'g_p2');
+  const nvo=A.new_vs_old;
+  chart('c_newold',{
+    tooltip:{trigger:'axis'},
+    legend:{data:['新客订单','老客订单','新客占比'],top:0,textStyle:{fontSize:11}},
+    grid:{left:55,right:50,top:35,bottom:48},
+    xAxis:{type:'category',data:nvo.map(d=>d.ym),...AXIS,axisLabel:{color:'#1f2937',fontSize:11,rotate:45,hideOverlap:true}},
+    yAxis:[{type:'value',...AXIS,axisLabel:{color:'#1f2937',fontSize:11}},
+           {type:'value',max:100,...AXIS,axisLabel:{color:'#1f2937',formatter:'{value}%',fontSize:11}}],
+    series:[
+      {name:'新客订单',type:'bar',stack:'a',data:nvo.map(d=>d.new_orders),itemStyle:{color:C.green}},
+      {name:'老客订单',type:'bar',stack:'a',data:nvo.map(d=>d.old_orders),itemStyle:{color:C.orange}},
+      {name:'新客占比',type:'line',yAxisIndex:1,data:nvo.map(d=>+d.new_pct.toFixed(1)),
+       itemStyle:{color:C.red},smooth:true,symbolSize:4}
+    ]
+  },'g_p2');
+  chart('c_pay',{
+    tooltip:{trigger:'item',formatter:p=>`${cn_pay(p.name)}<br/>${fmt(p.value)} 单 (${p.percent}%)`},
+    legend:{bottom:0,textStyle:{fontSize:11},itemWidth:10,itemHeight:8},
+    series:[{type:'pie',radius:['35%','60%'],center:['50%','42%'],
+      data:A.payment.map(d=>({name:cn_pay(d.main_payment_type),value:d.orders})),
+      color:[C.green,C.blue,C.orange,C.purple,C.gray],
+      label:{formatter:'{d}%',fontSize:11}}]
+  });
+  chart('c_inst',{
+    tooltip:{trigger:'axis'},
+    grid:{left:50,right:16,top:16,bottom:30},
+    xAxis:{type:'category',data:A.installments.map(d=>d.n+'期'),...AXIS,axisLabel:{color:'#1f2937',fontSize:11}},
+    yAxis:{type:'value',...AXIS,axisLabel:{color:'#1f2937',fontSize:11}},
+    series:[{type:'bar',data:A.installments.map(d=>d.orders),itemStyle:{color:C.blue,borderRadius:[3,3,0,0]}}]
+  });
+  chart('c_hour',{
+    tooltip:{trigger:'axis',formatter:p=>`${p[0].name} 点<br/>${fmt(p[0].value)} 单`},
+    grid:{left:48,right:16,top:16,bottom:30},
+    xAxis:{type:'category',data:A.hour_dist.map(d=>d.purchase_hour),...AXIS,axisLabel:{color:'#1f2937',fontSize:11}},
+    yAxis:{type:'value',...AXIS,axisLabel:{color:'#1f2937',fontSize:11}},
+    series:[{type:'line',data:A.hour_dist.map(d=>d.orders),smooth:true,areaStyle:{color:'rgba(47,111,62,.14)'},
+      itemStyle:{color:C.green},symbol:'none'}]
+  });
+  chart('c_week',{
+    tooltip:{trigger:'axis'},
+    grid:{left:48,right:16,top:16,bottom:26},
+    xAxis:{type:'category',data:A.weekday_dist.map(d=>d.name),...AXIS,axisLabel:{color:'#1f2937',fontSize:11}},
+    yAxis:{type:'value',...AXIS,axisLabel:{color:'#1f2937',fontSize:11}},
+    series:[{type:'bar',data:A.weekday_dist.map(d=>d.orders),
+      itemStyle:{color:p=>[5,6].includes(p.dataIndex)?C.orange:C.green,borderRadius:[3,3,0,0]}}]
+  });
+  chart('c_repeat',{
+    tooltip:{trigger:'axis',formatter:p=>`购买 ${p[0].name} 次<br/>${fmt(p[0].value)} 人`},
+    grid:{left:60,right:16,top:16,bottom:30},
+    xAxis:{type:'category',data:A.repeat_dist.map(d=>d.orders),...AXIS},
+    yAxis:{type:'log',...AXIS,axisLabel:{color:'#1f2937',fontSize:11}},
+    series:[{type:'bar',data:A.repeat_dist.map(d=>d.customers),itemStyle:{color:C.green,borderRadius:[3,3,0,0]},
+      label:{show:true,position:'top',fontSize:10,color:'#1f2937',formatter:p=>fmt(p.value)}}]
+  });
+  const rf=A.rfm_segment;
+  chart('c_rfm',{
+    tooltip:{trigger:'axis'},
+    legend:{data:['客户数占比','GMV 占比','客单价'],top:0,textStyle:{fontSize:11,color:'#1f2937'}},
+    grid:{left:140,right:110,top:40,bottom:34},
+    xAxis:[{type:'value',...AXIS,axisLabel:{color:'#1f2937',formatter:'{value}%',fontSize:11,color:'#1f2937'},name:'占比 %',nameLocation:'middle',nameGap:22},
+           {type:'value',...AXIS,axisLabel:{color:'#1f2937',formatter:v=>'R$'+fmt(v),fontSize:11,color:'#1f2937'},position:'top',min:0}],
+    yAxis:{type:'category',data:rf.map(d=>cn_seg(d.RFM_segment)),...AXIS,axisLabel:{color:'#1f2937',fontSize:11,color:'#1f2937'}},
+    series:[
+      {name:'客户数占比',type:'bar',xAxisIndex:0,data:rf.map(d=>+d.cust_share.toFixed(1)),itemStyle:{color:C.light},barWidth:10,barGap:'40%',
+        label:{show:true,position:'top',formatter:p=>p.value+'%',fontSize:11,color:'#1f2937',fontWeight:'600'}},
+      {name:'GMV 占比',type:'bar',xAxisIndex:0,data:rf.map(d=>+d.gmv_share.toFixed(1)),itemStyle:{color:C.green},barWidth:10,
+        label:{show:true,position:'bottom',formatter:p=>p.value+'%',fontSize:11,color:'#1f2937',fontWeight:'600'}},
+      {name:'客单价',type:'line',xAxisIndex:1,data:rf.map(d=>+d.aov.toFixed(0)),itemStyle:{color:C.orange},smooth:true,symbol:'circle',symbolSize:8,lineStyle:{width:2.5},
+        label:{show:true,position:'top',formatter:p=>'R$'+p.value,fontSize:12,color:'#b45309',fontWeight:'bold',
+          backgroundColor:'#fff',padding:[2,5],borderRadius:3,borderColor:'#f0d9b8',borderWidth:1},
+        labelLayout:{hideOverlap:true},z:5}
+    ]
+  });
+  document.getElementById('t_rfm').innerHTML =
+    '<tr><th>分群</th><th class="num">客户数</th><th class="num">占比</th><th class="num">GMV</th><th class="num">GMV占比</th><th class="num">客单价</th></tr>'+
+    rf.map(d=>`<tr><td>${d.RFM_segment}</td><td class="num">${fmt(d.customers)}</td><td class="num">${pct(d.cust_share)}</td>
+     <td class="num">${fmt(d.gmv)}</td><td class="num">${pct(d.gmv_share)}</td><td class="num">${fmt2(d.aov)}</td></tr>`).join('');
+  [['c_r_score','rfm_r_score_dist','R_score'],['c_f_score','rfm_f_score_dist','F_score'],['c_m_score','rfm_m_score_dist','M_score']]
+  .forEach(([id,key,col])=>{
+    const d=A[key]||[];
+    chart(id,{
+      tooltip:{trigger:'axis',formatter:p=>`${col} = ${p[0].name}<br/>${fmt(p[0].value)} 人`},
+      grid:{left:52,right:14,top:14,bottom:26},
+      xAxis:{type:'category',data:d.map(x=>x[col]),...AXIS,axisLabel:{color:'#1f2937',fontSize:11}},
+      yAxis:{type:'value',...AXIS,axisLabel:{color:'#1f2937',fontSize:11}},
+      series:[{type:'bar',data:d.map(x=>x.customers),
+        itemStyle:{color:p=>['#c8e6d0','#a8d5b5','#7fb069','#5a9455','#2f6f3e'][p.dataIndex]||C.green,borderRadius:[3,3,0,0]}}]
+    });
+  });
+  const ct=A.city_top.slice().reverse();
+  chart('c_city',{
+    tooltip:{trigger:'axis',formatter:p=>`${p[0].name}<br/>${fmt(p[0].value)} 位客户`},
+    grid:{left:130,right:40,top:12,bottom:24},
+    xAxis:{type:'value',...AXIS,axisLabel:{color:'#1f2937',fontSize:11}},
+    yAxis:{type:'category',data:ct.map(d=>d.customer_city.charAt(0).toUpperCase()+d.customer_city.slice(1)),...AXIS,axisLabel:{color:'#1f2937',fontSize:11}},
+    series:[{type:'bar',data:ct.map(d=>d.customers),itemStyle:{color:C.teal,borderRadius:[0,4,4,0]}}]
+  });
+  document.getElementById('t_state_cust').innerHTML =
+    '<tr><th>州</th><th class="num">客户数</th><th class="num">订单数</th><th class="num">人均单量</th><th class="num">GMV</th></tr>'+
+    A.state_gmv.slice(0,15).map(d=>`<tr><td>${cn_state(d.code)}</td><td class="num">${fmt(d.customers)}</td>
+     <td class="num">${fmt(d.orders)}</td><td class="num">${fmt2(d.orders_per_customer)}</td><td class="num">${fmt(d.gmv)}</td></tr>`).join('');
+
+  /* ---------- 页面3 ---------- */
+  const catAll=A.category;
+  kpiBox('kpi2',[
+    ['在售 SKU',fmt(catAll.reduce((a,b)=>a+b.qty,0)),'有销量商品行数'],
+    ['品类数',catAll.length,'当前口径下'],
+    ['销售件数',fmt(A.kpi.items_sold),'订单明细行数'],
+    ['TOP1 品类',catAll[0]?cn_cat(catAll[0].code):'-','按 GMV'],
+    ['TOP10 品类占比',pct(catAll.slice(0,10).reduce((a,b)=>a+b.gmv_share,0)),'集中度'],
+    ['平均件单价','R$ '+fmt2(catAll.reduce((a,b)=>a+b.gmv,0)/Math.max(1,catAll.reduce((a,b)=>a+b.qty,0))),'GMV / 件数'],
+  ]);
+  function catBar(id,data,valKey,color){
+    const d=data.slice().reverse();
+    chart(id,{
+      tooltip:{trigger:'axis',formatter:p=>{const x=p[0].data;
+        return `${cn_cat(x.code)}<br/>${valKey==='gmv'?'GMV R$ '+fmt(x.value):'销量 '+fmt(x.value)+' 件'}<br/>占比 ${pct(x.sh)}`;}},
+      grid:{left:110,right:60,top:12,bottom:24},
+      xAxis:{type:'value',...AXIS,axisLabel:{color:'#1f2937',formatter:v=>valKey==='gmv'?fmt(v/1000)+'K':fmt(v),fontSize:11}},
+      yAxis:{type:'category',data:d.map(x=>cn_cat(x.code)),...AXIS,axisLabel:{color:'#1f2937',fontSize:11}},
+      series:[{type:'bar',data:d.map(x=>({value:valKey==='gmv'?x.gmv:x.qty,code:x.code,sh:x.gmv_share,
+          itemStyle:{color:FILTER.cats.has(x.code)?C.orange:color,borderRadius:[0,4,4,0]}})),
+        label:{show:true,position:'right',formatter:p=>pct(p.data.sh),fontSize:10,color:'#1f2937'}}]
+    });
+  }
+  catBar('c_cat_qty',A.category_top_qty,'qty',C.blue);
+  catBar('c_cat_gmv',A.category_top_gmv,'gmv',C.green);
+  chart('c_cat_matrix',{
+    tooltip:{formatter:p=>`${cn_cat(p.data[3])}<br/>销量 ${fmt(p.data[0])} 件<br/>GMV R$ ${fmt(p.data[1])}<br/>件单价 R$ ${fmt2(p.data[1]/p.data[0])}`},
+    grid:{left:70,right:30,top:20,bottom:45},
+    xAxis:{type:'value',name:'销量(件)',nameLocation:'middle',nameGap:26,...AXIS,axisLabel:{color:'#1f2937',fontSize:11}},
+    yAxis:{type:'value',name:'GMV',...AXIS,axisLabel:{color:'#1f2937',formatter:v=>'R$'+fmt(v),fontSize:11}},
+    series:[{type:'scatter',
+      data:catAll.slice(0,25).map(c=>[c.qty,c.gmv,c.gmv,c.code]),
+      symbolSize:d=>Math.max(8,Math.min(45,Math.sqrt(d[1])/22)),
+      itemStyle:{color:C.green,opacity:.72},
+      label:{show:true,formatter:p=>(cn_cat(p.data&&p.data[3])||'').slice(0,6),fontSize:10,position:'top',color:'#1f2937'},
+      markLine:{silent:true,symbol:'none',lineStyle:{type:'dashed',color:'#c9ced4'},
+        data:[{yAxis:catAll.reduce((a,b)=>a+b.gmv,0)/catAll.length,label:{formatter:'均值',fontSize:11}}]}}]
+  });
+  let cum=0; const par=catAll.slice(0,12).map(c=>{cum+=c.gmv_share;return {n:cn_cat(c.code),s:c.gmv_share,c:cum};});
+  chart('c_cat_pareto',{
+    tooltip:{trigger:'axis'},
+    legend:{data:['单品类占比','累计占比'],top:0,textStyle:{fontSize:11}},
+    grid:{left:45,right:45,top:30,bottom:72},
+    xAxis:{type:'category',data:par.map(p=>p.n),...AXIS,axisLabel:{color:'#1f2937',fontSize:11,rotate:35,hideOverlap:true}},
+    yAxis:[{type:'value',...AXIS,axisLabel:{color:'#1f2937',formatter:'{value}%',fontSize:11}},
+           {type:'value',max:100,...AXIS,axisLabel:{color:'#1f2937',formatter:'{value}%',fontSize:11}}],
+    series:[
+      {name:'单品类占比',type:'bar',data:par.map(p=>+p.s.toFixed(2)),itemStyle:{color:C.light}},
+      {name:'累计占比',type:'line',yAxisIndex:1,data:par.map(p=>+p.c.toFixed(1)),
+       itemStyle:{color:C.red},smooth:true,symbolSize:5}
+    ]
+  });
+  document.getElementById('t_pq').innerHTML='<tr><th>#</th><th>商品 ID</th><th>品类</th><th class="num">销量</th><th class="num">GMV</th></tr>'+
+    A.product_top_qty.map((d,i)=>`<tr><td>${i+1}</td><td>${d.product_id.slice(0,10)}…</td><td>${cn_cat(d.cat)}</td>
+     <td class="num">${fmt(d.qty)}</td><td class="num">${fmt(d.gmv)}</td></tr>`).join('');
+  document.getElementById('t_pg').innerHTML='<tr><th>#</th><th>商品 ID</th><th>品类</th><th class="num">GMV</th><th class="num">销量</th></tr>'+
+    A.product_top_gmv.map((d,i)=>`<tr><td>${i+1}</td><td>${d.product_id.slice(0,10)}…</td><td>${cn_cat(d.cat)}</td>
+     <td class="num">${fmt(d.gmv)}</td><td class="num">${fmt(d.qty)}</td></tr>`).join('');
+  // 页面内容（静态，来自 DATA）
+  const ph=DATA.photo_analysis;
+  chart('c_photo',{
+    tooltip:{trigger:'axis',formatter:p=>`${p[0].name}图片<br/>${fmt(p[0].data.p)} 款商品<br/>平均销量 ${p[0].data.q} 件`},
+    legend:{data:['商品款数','平均销量'],top:0,textStyle:{fontSize:11}},
+    grid:{left:55,right:50,top:32,bottom:34},
+    xAxis:{type:'category',data:ph.map(d=>d.product_photos_qty+'张'),...AXIS,axisLabel:{color:'#1f2937',fontSize:11}},
+    yAxis:[{type:'value',name:'款数',...AXIS,axisLabel:{color:'#1f2937',fontSize:11}},
+           {type:'value',name:'平均销量',...AXIS,axisLabel:{color:'#1f2937',fontSize:11}}],
+    series:[
+      {name:'商品款数',type:'bar',data:ph.map(d=>({value:d.products,p:d.products,q:+d.avg_qty.toFixed(2)})),
+       itemStyle:{color:C.light,borderRadius:[3,3,0,0]}},
+      {name:'平均销量',type:'line',yAxisIndex:1,data:ph.map(d=>+d.avg_qty.toFixed(2)),
+       itemStyle:{color:C.green},smooth:true,lineStyle:{width:2.5}}
+    ]
+  });
+  const ds=DATA.desc_analysis;
+  chart('c_desc',{
+    tooltip:{trigger:'axis',formatter:p=>`${p[0].name}<br/>${fmt(p[0].value)} 款<br/>平均销量 ${p[0].data.q} 件`},
+    grid:{left:55,right:20,top:18,bottom:34},
+    xAxis:{type:'category',data:ds.map(d=>d.desc_band),...AXIS,axisLabel:{color:'#1f2937',fontSize:11}},
+    yAxis:{type:'value',...AXIS,axisLabel:{color:'#1f2937',fontSize:11}},
+    series:[{type:'bar',data:ds.map(d=>({value:d.products,q:+d.avg_qty.toFixed(2)})),
+      itemStyle:{color:C.teal,borderRadius:[3,3,0,0]},
+      label:{show:true,position:'top',fontSize:10,color:'#1f2937',formatter:p=>'均销 '+p.data.q}}]
+  });
+  const sv=DATA.sold_vs_unsold;
+  chart('c_sold',{
+    tooltip:{trigger:'axis'},
+    legend:{data:['平均图片数','平均描述长度','平均标题长度'],top:0,textStyle:{fontSize:11}},
+    grid:{left:50,right:20,top:32,bottom:30},
+    xAxis:{type:'category',data:sv.map(d=>d.is_sold),...AXIS,axisLabel:{color:'#1f2937',fontSize:11}},
+    yAxis:{type:'value',...AXIS,axisLabel:{color:'#1f2937',fontSize:11}},
+    series:[
+      {name:'平均图片数',type:'bar',data:sv.map(d=>+d.avg_photos.toFixed(2)),itemStyle:{color:C.green}},
+      {name:'平均描述长度',type:'bar',data:sv.map(d=>+d.avg_desc.toFixed(0)),itemStyle:{color:C.blue}},
+      {name:'平均标题长度',type:'bar',data:sv.map(d=>+d.avg_name_len.toFixed(0)),itemStyle:{color:C.orange}}
+    ]
+  });
+  const fr=catAll.filter(c=>c.gmv>50000).sort((a,b)=>b.freight_pct-a.freight_pct).slice(0,12).reverse();
+  chart('c_freight',{
+    tooltip:{trigger:'axis',formatter:p=>`${cn_cat(p[0].name)}<br/>运费占比 ${pct(p[0].value)}`},
+    grid:{left:110,right:55,top:12,bottom:24},
+    xAxis:{type:'value',...AXIS,axisLabel:{color:'#1f2937',formatter:'{value}%',fontSize:11}},
+    yAxis:{type:'category',data:fr.map(d=>cn_cat(d.code)),...AXIS,axisLabel:{color:'#1f2937',fontSize:11}},
+    series:[{type:'bar',data:fr.map(d=>+d.freight_pct.toFixed(1)),itemStyle:{color:C.orange,borderRadius:[0,4,4,0]},
+      label:{show:true,position:'right',formatter:p=>p.value+'%',fontSize:10,color:'#1f2937'}}]
+  });
+
+  /* ---------- 页面4 ---------- */
+  kpiBox('kpi3',[
+    ['交付完成率',pct(A.kpi.delivery_rate),'已送达 / 全量订单'],
+    ['准时率',pct(A.kpi.on_time_rate),'未晚于承诺日期'],
+    ['平均配送',fmt2(A.kpi.avg_delivery_days)+' 天','下单到送达'],
+    ['平均评分',fmt2(A.kpi.avg_review),'满分 5'],
+    ['卖家数',fmt(A.seller_concentration.total_sellers),'平台活跃卖家'],
+    ['TOP10% 卖家贡献',pct(A.seller_concentration.top10pct_gmv_share),fmt(A.seller_concentration.top10pct_sellers)+' 家'],
+  ]);
+  chart('c_deliv_band',{
+    tooltip:{trigger:'axis',formatter:p=>`${p[0].name}<br/>${fmt(p[0].value)} 单`},
+    grid:{left:55,right:20,top:16,bottom:30},
+    xAxis:{type:'category',data:A.delivery_band.map(d=>d.band),...AXIS,axisLabel:{color:'#1f2937',fontSize:11}},
+    yAxis:{type:'value',...AXIS,axisLabel:{color:'#1f2937',fontSize:11}},
+    series:[{type:'bar',data:A.delivery_band.map(d=>d.cnt),itemStyle:{color:C.blue,borderRadius:[3,3,0,0]},
+      label:{show:true,position:'top',fontSize:10,color:'#1f2937'}}]
+  });
+  chart('c_delay_band',{
+    tooltip:{trigger:'axis',formatter:p=>`${p[0].name}<br/>${fmt(p[0].value)} 单`},
+    grid:{left:55,right:20,top:16,bottom:30},
+    xAxis:{type:'category',data:A.delay_band.map(d=>d.band),...AXIS,axisLabel:{color:'#1f2937',fontSize:11,rotate:15,hideOverlap:true}},
+    yAxis:{type:'value',...AXIS,axisLabel:{color:'#1f2937',fontSize:11}},
+    series:[{type:'bar',data:A.delay_band.map(d=>({value:d.cnt})),
+      itemStyle:{color:p=>p.dataIndex===0?C.green:(p.dataIndex>=6?C.red:C.orange),borderRadius:[3,3,0,0]}}]
+  });
+  const dvs=A.delivery_vs_score;
+  chart('c_deliv_score',{
+    tooltip:{trigger:'axis'},
+    legend:{data:['平均评分','1 星差评占比'],top:0,textStyle:{fontSize:11}},
+    grid:{left:50,right:50,top:34,bottom:34},
+    xAxis:{type:'category',data:dvs.map(d=>d.band),...AXIS,axisLabel:{color:'#1f2937',fontSize:11}},
+    yAxis:[{type:'value',name:'评分',min:2,max:5,...AXIS,axisLabel:{color:'#1f2937',fontSize:11}},
+           {type:'value',name:'1星占比',...AXIS,axisLabel:{color:'#1f2937',formatter:'{value}%',fontSize:11}}],
+    series:[
+      {name:'平均评分',type:'bar',data:dvs.map(d=>+d.avg_score.toFixed(2)),
+       itemStyle:{color:p=>p.dataIndex>=4?C.red:C.green,borderRadius:[3,3,0,0]},
+       label:{show:true,position:'top',fontSize:10,color:'#1f2937'}},
+      {name:'1 星差评占比',type:'line',yAxisIndex:1,data:dvs.map(d=>+d.pct_1star.toFixed(1)),
+       itemStyle:{color:C.red},smooth:true,lineStyle:{width:2.5},symbolSize:7}
+    ]
+  });
+  const lvs=A.late_vs_score;
+  chart('c_late_score',{
+    tooltip:{trigger:'axis'},
+    legend:{data:['平均评分','1 星占比'],top:0,textStyle:{fontSize:11}},
+    grid:{left:50,right:50,top:34,bottom:30},
+    xAxis:{type:'category',data:lvs.map(d=>d.is_late),...AXIS,axisLabel:{color:'#1f2937',fontSize:12}},
+    yAxis:[{type:'value',name:'评分',min:0,max:5,...AXIS,axisLabel:{color:'#1f2937',fontSize:11}},
+           {type:'value',name:'1星占比',...AXIS,axisLabel:{color:'#1f2937',formatter:'{value}%',fontSize:11}}],
+    series:[
+      {name:'平均评分',type:'bar',barWidth:'38%',data:lvs.map(d=>+d.avg_score.toFixed(2)),
+       itemStyle:{color:p=>p.dataIndex===0?C.green:C.red,borderRadius:[3,3,0,0]},
+       label:{show:true,position:'top',fontSize:11}},
+      {name:'1 星占比',type:'line',yAxisIndex:1,data:lvs.map(d=>+d.pct_1star.toFixed(1)),
+       itemStyle:{color:C.orange},lineStyle:{width:2.5},symbolSize:8}
+    ]
+  });
+  const sl=A.seller_top.slice().reverse();
+  chart('c_seller',{
+    tooltip:{trigger:'axis',formatter:p=>`卖家 ${p[0].name}<br/>GMV R$ ${fmt(p[0].value)}`},
+    grid:{left:140,right:60,top:12,bottom:24},
+    xAxis:{type:'value',...AXIS,axisLabel:{color:'#1f2937',formatter:v=>'R$'+fmt(v),fontSize:11}},
+    yAxis:{type:'category',data:sl.map(d=>d.seller_id.slice(0,12)+'… ('+(d.state||'-')+')'),...AXIS,axisLabel:{color:'#1f2937',fontSize:11}},
+    series:[{type:'bar',data:sl.map(d=>d.gmv),itemStyle:{color:C.green,borderRadius:[0,4,4,0]}}]
+  });
+  chart('c_seller_state',{
+    tooltip:{trigger:'item',formatter:p=>`${cn_state(p.name)}<br/>${fmt(p.value)} 家卖家`},
+    legend:{bottom:0,textStyle:{fontSize:11}},
+    series:[{type:'pie',radius:['32%','58%'],center:['50%','42%'],
+      data:A.seller_state.slice(0,8).map(d=>({name:d.seller_state,value:d.sellers})),
+      color:[C.green,C.light,C.blue,C.orange,C.teal,C.purple,C.gray,'#c8e6d0'],
+      label:{formatter:'{b} {d}%',fontSize:11}}]
+  });
+  chart('c_review',{
+    tooltip:{trigger:'axis',formatter:p=>`${p[0].name} 星<br/>${fmt(p[0].value)} 单 (${pct(p[0].data.p)})`},
+    grid:{left:55,right:20,top:16,bottom:30},
+    xAxis:{type:'category',data:A.review_dist.map(d=>d.review_score+'星'),...AXIS,axisLabel:{color:'#1f2937',fontSize:11}},
+    yAxis:{type:'value',...AXIS,axisLabel:{color:'#1f2937',fontSize:11}},
+    series:[{type:'bar',data:A.review_dist.map(d=>({value:d.orders,p:d.pct})),
+      itemStyle:{color:p=>p.dataIndex===0?C.red:(p.dataIndex===4?C.green:C.orange),borderRadius:[3,3,0,0]},
+      label:{show:true,position:'top',formatter:p=>pct(p.data.p),fontSize:10,color:'#1f2937'}}]
+  });
+  const sd=A.state_delivery.filter(d=>d.total_orders>=500).sort((a,b)=>a.delivery_rate-b.delivery_rate).slice(0,12).reverse();
+  chart('c_state_dl',{
+    tooltip:{trigger:'axis',formatter:p=>`${cn_state(p[0].name)}<br/>完成率 ${pct(p[0].value)}<br/>平均 ${(p[0].data||{}).d||'-'} 天`},
+    grid:{left:110,right:55,top:12,bottom:24},
+    xAxis:{type:'value',min:80,...AXIS,axisLabel:{color:'#1f2937',formatter:'{value}%',fontSize:11}},
+    yAxis:{type:'category',data:sd.map(d=>cn_state(d.code)),...AXIS,axisLabel:{color:'#1f2937',fontSize:11}},
+    series:[{type:'bar',data:sd.map(d=>({value:+d.delivery_rate.toFixed(1),d:+d.avg_delivery_days.toFixed(1)})),
+      itemStyle:{color:p=>p.value<95?C.red:C.green,borderRadius:[0,4,4,0]},
+      label:{show:true,position:'right',formatter:p=>p.value+'%',fontSize:10,color:'#1f2937'}}]
+  });
+
+  /* ---------- 页面5 ---------- */
+  kpiBox('kpi4',[
+    ['总 GMV','R$ '+fmt(A.kpi.gmv),'含运费'],
+    ['订单量',fmt(A.kpi.orders),'已交付'],
+    ['客户数',fmt(A.kpi.customers),'真实客户'],
+    ['AOV','R$ '+fmt2(A.kpi.aov),'客单价'],
+    ['交付完成率',pct(A.kpi.delivery_rate),'履约水平'],
+    ['准时率',pct(A.kpi.on_time_rate),'时效承诺'],
+    ['平均评分',fmt2(A.kpi.avg_review),'客户满意度'],
+    ['复购率',pct(rs.repeat_rate),'客户留存'],
+  ]);
+  chart('c_sum_state',{
+    tooltip:{trigger:'axis',formatter:p=>`${cn_state(p[0].name)}<br/>R$ ${fmt(p[0].value)}`},
+    grid:{left:110,right:55,top:14,bottom:24},
+    xAxis:{type:'value',...AXIS,axisLabel:{color:'#1f2937',formatter:v=>fmt(v/1000000)+'M',fontSize:11}},
+    yAxis:{type:'category',data:A.state_gmv.slice(0,8).reverse().map(d=>cn_state(d.code)),...AXIS,axisLabel:{color:'#1f2937',fontSize:11}},
+    series:[{type:'bar',data:A.state_gmv.slice(0,8).reverse().map(d=>d.gmv),itemStyle:{color:C.green,borderRadius:[0,4,4,0]}}]
+  });
+  chart('c_sum_cat',{
+    tooltip:{trigger:'axis',formatter:p=>`${cn_cat(p[0].name)}<br/>R$ ${fmt(p[0].value)}`},
+    grid:{left:110,right:55,top:14,bottom:24},
+    xAxis:{type:'value',...AXIS,axisLabel:{color:'#1f2937',formatter:v=>'R$'+fmt(v),fontSize:11}},
+    yAxis:{type:'category',data:catAll.slice(0,8).reverse().map(d=>cn_cat(d.code)),...AXIS,axisLabel:{color:'#1f2937',fontSize:11}},
+    series:[{type:'bar',data:catAll.slice(0,8).reverse().map(d=>d.gmv),itemStyle:{color:C.blue,borderRadius:[0,4,4,0]}}]
+  });
+  chart('c_sum_rfm',{
+    tooltip:{trigger:'item',formatter:p=>`${p.name}<br/>R$ ${fmt(p.value)} (${p.percent}%)`},
+    legend:{bottom:0,textStyle:{fontSize:11}},
+    series:[{type:'pie',radius:['35%','60%'],center:['50%','42%'],
+      data:A.rfm_segment.map(d=>({name:cn_seg(d.RFM_segment),value:Math.round(d.gmv)})),
+      color:[C.green,C.light,C.orange,C.blue,C.red,C.gray,'#c8e6d0'],
+      label:{formatter:'{b}\n{d}%',fontSize:11}}]
+  });
+  chart('c_sum_trend',{
+    tooltip:{trigger:'axis'},
+    grid:{left:65,right:24,top:16,bottom:44},
+    xAxis:{type:'category',data:mtc.map(d=>d.ym),...AXIS,axisLabel:{color:'#1f2937',fontSize:11,rotate:45,hideOverlap:true}},
+    yAxis:{type:'value',...AXIS,axisLabel:{color:'#1f2937',formatter:v=>fmt(v/1000000)+'M',fontSize:11}},
+    series:[{type:'bar',data:mtc.map(d=>d.gmv),itemStyle:{color:C.green}}]
+  });
+
+  // 筛选状态提示
+  updateFilterInfo();
+}
+
+/* =========================================================
+   页面5（节假日，静态，来自 DATA，不受切片器影响）
+   ========================================================= */
+function renderHoliday(){
+  const HOL=DATA.holidays||[], BF=DATA.bf_day_vs_normal||{bf_day:{},normal_day:{}};
+  const bfRow=HOL.find(h=>h.name==='黑色星期五')||{};
+  kpiBox('kpi5',[
+    ['黑五当天订单',fmt(BF.bf_day.orders||0),'2017-11-24'],
+    ['黑五当天 uplift','+'+(bfRow.uplift_day||0)+'%','vs 基线 '+fmt(bfRow.baseline_orders||0)+' 单'],
+    ['黑五当周日均',fmt(DATA.bf_weeks[1].daily_orders)+' 单','前一周 '+fmt(DATA.bf_weeks[0].daily_orders)+' 单'],
+    ['黑五当周 GMV','R$ '+fmt(DATA.bf_weeks[1].gmv),'日均 R$ '+fmt(DATA.bf_weeks[1].daily_gmv)],
+    ['黑五节前 7 日','+'+(bfRow.uplift_pre||0)+'%','预热效应'],
+    ['黑五节后 7 日','+'+(bfRow.uplift_post||0)+'%','长尾效应'],
+    ['黑五平均分期',fmt2(BF.bf_day.avg_installments||0)+' 期','日常 '+fmt2(BF.normal_day.avg_installments||0)+' 期'],
+    ['黑五信用卡占比',pct(BF.bf_day.credit_card_pct||0),'日常 '+pct(BF.normal_day.credit_card_pct||0)],
+  ]);
+  // ---- 节日选择器 ----
+  let selHol=null;
+  const hs=HOL.slice().sort((a,b)=>b.uplift_day-a.uplift_day);
+  const hsTop=hs.slice(0,12);
+  const chipBox=document.getElementById('holChips');
+  const detailBox=document.getElementById('holDetail');
+  chipBox.innerHTML='';
+  hs.forEach((h,i)=>{
+    const b=document.createElement('button');
+    b.textContent=h.name;
+    b.style.cssText='background:#f0f4f3;border:1px solid #c8d5c9;color:#374151;padding:4px 10px;border-radius:14px;font-size:11.5px;cursor:pointer;transition:all .15s';
+    b.onmouseenter=()=>{if(selHol!==i)b.style.background='#e8f0e9';};
+    b.onmouseleave=()=>{if(selHol!==i)b.style.background='#f0f4f3';};
+    b.onclick=()=>selectHoliday(i);
+    chipBox.appendChild(b);
+  });
+  function selectHoliday(idx){
+    selHol=(selHol===idx)?null:idx;
+    updateChips(); updateDetail(); updateTableHighlight();
+  }
+  function updateChips(){
+    chipBox.childNodes.forEach((b,i)=>{
+      if(i===selHol){b.style.background='#2f6f3e';b.style.color='#fff';b.style.borderColor='#2f6f3e';b.style.fontWeight='600';}
+      else{b.style.background='#f0f4f3';b.style.color='#374151';b.style.borderColor='#c8d5c9';b.style.fontWeight='400';}
+    });
+  }
+  function updateDetail(){
+    if(selHol==null){detailBox.style.display='none';return;}
+    const h=hs[selHol];
+    const preC=h.uplift_pre>=0?'#2f6f3e':'#c0504d';
+    const dayC=h.uplift_day>=0?'#2f6f3e':'#c0504d';
+    const postC=h.uplift_post>=0?'#2f6f3e':'#c0504d';
+    detailBox.style.display='block';
+    detailBox.innerHTML=`<b style="font-size:14.5px;color:#2f6f3e">${h.name}</b>（${h.date}）&nbsp;&nbsp;<span class="tag">当天 uplift ${h.uplift_day>0?'+':''}${h.uplift_day}%</span>`+
+      `<div style="display:flex;gap:20px;margin-top:8px;flex-wrap:wrap">`+
+      `<div><b>基线日均</b><br/><span class="num" style="font-size:16px">${fmt(h.baseline_orders)} 单</span><br/><span style="color:#6b7280;font-size:11.5px">R$ ${fmt(h.baseline_gmv)}</span></div>`+
+      `<div><b>节前 7 日</b><br/><span class="num" style="font-size:16px;color:${preC}">${fmt(h.pre7_orders)} 单</span> <span style="font-size:12px">(${h.uplift_pre>0?'+':''}${h.uplift_pre}%)</span></div>`+
+      `<div><b>当天</b><br/><span class="num" style="font-size:18px;font-weight:700;color:${dayC}">${fmt(h.day_orders)} 单</span> <span style="font-size:13px;font-weight:600;color:${dayC}">(${h.uplift_day>0?'+':''}${h.uplift_day}%)</span></div>`+
+      `<div><b>节后 7 日</b><br/><span class="num" style="font-size:16px;color:${postC}">${fmt(h.post7_orders)} 单</span> <span style="font-size:12px">(${h.uplift_post>0?'+':''}${h.uplift_post}%)</span></div>`+
+      `<div><b>当天 GMV</b><br/><span class="num" style="font-size:16px">R$ ${fmt(h.day_gmv)}</span> <span style="font-size:12px">(GMV uplift ${h.uplift_gmv_day>0?'+':''}${h.uplift_gmv_day}%)</span></div>`+
+      `</div><div style="margin-top:6px;color:#6b7280;font-size:11.5px">基线来源：${h.base_src}（${h.base_days} 个非窗口日均值）</div>`;
+  }
+  function updateTableHighlight(){
+    const rows=document.querySelectorAll('#t_hol tr');
+    rows.forEach((r,i)=>{
+      if(i===0)return;
+      if(selHol!=null && i-1===selHol){r.style.background='#e8f5e9';r.style.fontWeight='600';}
+      else{r.style.background=i%2===0?'#fafbfc':'#fff';r.style.fontWeight='400';}
+    });
+    if(selHol!=null && rows[selHol+1]) rows[selHol+1].scrollIntoView({behavior:'smooth',block:'center'});
+  }
+  const bs=DATA.bf_series||[];
+  chart('c_bf_series',{
+    tooltip:{trigger:'axis',formatter:p=>`${p[0].name}<br/>${fmt(p[0].value)} 单`},
+    grid:{left:55,right:24,top:55,bottom:52},
+    xAxis:{type:'category',data:bs.map(d=>d.date),...AXIS,axisLabel:{color:'#1f2937',fontSize:11,rotate:45,interval:3,hideOverlap:true}},
+    yAxis:{type:'value',...AXIS,axisLabel:{color:'#1f2937',fontSize:11}},
+    series:[{type:'bar',
+      data:bs.map(d=>{
+        const isBf=!!d.is_bf;
+        const base={value:d.orders,itemStyle:{color:isBf?C.red:C.green,borderRadius:[2,2,0,0]}};
+        return isBf?{...base,label:{show:true,position:'top',formatter:'黑五\n1147 单',fontSize:10,fontWeight:'bold',color:C.red,lineHeight:14,
+            backgroundColor:'#fff',borderColor:C.red,borderWidth:1,borderRadius:4,padding:[4,6],distance:4}}:base;
+      }),
+      markLine:{silent:true,symbol:'none',lineStyle:{color:C.red,type:'dashed',width:1.5},
+        label:{show:false},data:[{xAxis:'2017-11-24'}]}
+    }]
+  });
+  // c_hol_all 柱子点击 -> 选中对应节日
+  if(CH.c_hol_all) CH.c_hol_all.on('click',function(p){
+    if(p.dataIndex!=null && p.dataIndex<hsTop.length){
+      // 找到该节日在 hs（全量排序）中的索引
+      const targetName=hsTop[p.dataIndex].name;
+      const idx=hs.findIndex(h=>h.name===targetName);
+      if(idx>=0) selectHoliday(idx);
+    }
+  });
+  // c_hol_all 柱子点击 -> 选中对应节日
+  chart('c_hol_all',{
+    tooltip:{trigger:'axis',formatter:p=>{const d=p[0].data;
+      return `${d.full}<br/>节前7日 ${d.pre>0?'+':''}${d.pre}%<br/>当天 ${d.day>0?'+':''}${d.day}%<br/>节后7日 ${d.post>0?'+':''}${d.post}%`;}},
+    legend:{data:['节前 7 日','节日当天','节后 7 日'],top:0,textStyle:{fontSize:11}},
+    grid:{left:45,right:20,top:32,bottom:74},
+    xAxis:{type:'category',data:hsTop.map(d=>d.name),...AXIS,
+      axisLabel:{color:'#1f2937',fontSize:11,rotate:40,interval:0,lineHeight:14}},
+    yAxis:{type:'value',...AXIS,axisLabel:{color:'#1f2937',formatter:'{value}%',fontSize:11}},
+    series:[
+      {name:'节前 7 日',type:'bar',data:hsTop.map(d=>({value:d.uplift_pre,pre:d.uplift_pre,day:d.uplift_day,post:d.uplift_post,full:d.name+' '+d.date})),
+       itemStyle:{color:C.light}},
+      {name:'节日当天',type:'bar',data:hsTop.map(d=>({value:d.uplift_day,pre:d.uplift_pre,day:d.uplift_day,post:d.uplift_post,full:d.name+' '+d.date})),
+       itemStyle:{color:p=>p.value>=0?C.green:C.red}},
+      {name:'节后 7 日',type:'bar',data:hsTop.map(d=>({value:d.uplift_post,pre:d.uplift_pre,day:d.uplift_day,post:d.uplift_post,full:d.name+' '+d.date})),
+       itemStyle:{color:C.blue}}
+    ]
+  });
+  if(CH.c_hol_all) CH.c_hol_all.on('click',function(p){
+    if(p.dataIndex!=null && p.dataIndex<hsTop.length){
+      const targetName=hsTop[p.dataIndex].name;
+      const idx=hs.findIndex(h=>h.name===targetName);
+      if(idx>=0) selectHoliday(idx);
+    }
+  });
+  const bw=DATA.bf_weeks;
+  chart('c_bf_weeks',{
+    tooltip:{trigger:'axis'},
+    legend:{data:['日均订单','日均 GMV'],top:0,textStyle:{fontSize:11}},
+    grid:{left:55,right:60,top:32,bottom:34},
+    xAxis:{type:'category',data:bw.map(d=>d.label),...AXIS,axisLabel:{color:'#1f2937',fontSize:11}},
+    yAxis:[{type:'value',name:'日均订单',...AXIS,axisLabel:{color:'#1f2937',fontSize:11}},
+           {type:'value',name:'日均GMV',...AXIS,axisLabel:{color:'#1f2937',formatter:v=>'R$'+fmt(v),fontSize:11}}],
+    series:[
+      {name:'日均订单',type:'bar',data:bw.map(d=>d.daily_orders),
+       itemStyle:{color:p=>p.dataIndex===1?C.red:C.green,borderRadius:[3,3,0,0]},
+       label:{show:true,position:'top',fontSize:10,color:'#1f2937'}},
+      {name:'日均 GMV',type:'line',yAxisIndex:1,data:bw.map(d=>d.daily_gmv),
+       itemStyle:{color:C.orange},lineStyle:{width:2.5},symbolSize:7}
+    ]
+  });
+  const cmpItems=[
+    ['客单价 AOV',BF.bf_day.aov,BF.normal_day.aov,'R$ '],
+    ['平均分期期数',BF.bf_day.avg_installments,BF.normal_day.avg_installments,''],
+    ['信用卡占比 %',BF.bf_day.credit_card_pct,BF.normal_day.credit_card_pct,''],
+    ['新客占比 %',BF.bf_day.new_cust_pct,BF.normal_day.new_cust_pct,''],
+  ];
+  chart('c_bf_compare',{
+    tooltip:{trigger:'axis'},
+    legend:{data:['黑五当天','11月日常'],top:0,textStyle:{fontSize:11}},
+    grid:{left:55,right:24,top:32,bottom:34},
+    xAxis:{type:'category',data:cmpItems.map(c=>c[0]),...AXIS,axisLabel:{color:'#1f2937',fontSize:11}},
+    yAxis:{type:'value',...AXIS,axisLabel:{color:'#1f2937',fontSize:11}},
+    series:[
+      {name:'黑五当天',type:'bar',data:cmpItems.map(c=>+c[1].toFixed(2)),itemStyle:{color:C.red,borderRadius:[3,3,0,0]},
+       label:{show:true,position:'top',fontSize:11}},
+      {name:'11月日常',type:'bar',data:cmpItems.map(c=>+c[2].toFixed(2)),itemStyle:{color:C.green,borderRadius:[3,3,0,0]},
+       label:{show:true,position:'top',fontSize:11}}
+    ]
+  });
+  const bc=DATA.bf_category.slice().sort((a,b)=>b.share_diff-a.share_diff);
+  chart('c_bf_cat',{
+    tooltip:{trigger:'axis',formatter:p=>{const d=p[0].data;
+      return `${cn_cat(d.n)}<br/>黑五当周占比 ${d.s}%（日常 ${d.sn}%）<br/>变化 ${d.d>0?'+':''}${d.d} 个百分点`;}},
+    grid:{left:110,right:60,top:12,bottom:24},
+    xAxis:{type:'value',...AXIS,axisLabel:{color:'#1f2937',formatter:'{value}pp',fontSize:11}},
+    yAxis:{type:'category',data:bc.map(d=>cn_cat(d.product_category_name_english)),...AXIS,axisLabel:{color:'#1f2937',fontSize:11}},
+    series:[{type:'bar',data:bc.map(d=>({value:+d.share_diff.toFixed(2),n:d.product_category_name_english,
+      s:+d.share_bf.toFixed(1),sn:+d.share_nm.toFixed(1),d:+d.share_diff.toFixed(2)})),
+      itemStyle:{color:p=>p.value>=0?C.green:C.orange},
+      label:{show:true,position:p=>p.value>=0?'right':'left',fontSize:10,color:'#1f2937',
+        formatter:p=>(p.value>=0?'+':'')+p.value}}]
+  });
+  document.getElementById('t_hol').innerHTML =
+    '<tr><th>节日</th><th>日期</th><th class="num">基线</th><th class="num">节前7日</th><th class="num">当天</th><th class="num">节后7日</th><th class="num">当天uplift</th><th>基线来源</th></tr>'+
+    hs.map(d=>`<tr><td>${d.name}</td><td>${d.date}</td><td class="num">${fmt(d.baseline_orders)}</td>
+     <td class="num">${fmt(d.pre7_orders)} <span style="color:${d.uplift_pre>=0?'#2f6f3e':'#c0504d'}">(${d.uplift_pre>0?'+':''}${d.uplift_pre}%)</span></td>
+     <td class="num">${fmt(d.day_orders)} <span style="color:${d.uplift_day>=0?'#2f6f3e':'#c0504d'}">(${d.uplift_day>0?'+':''}${d.uplift_day}%)</span></td>
+     <td class="num">${fmt(d.post7_orders)} <span style="color:${d.uplift_post>=0?'#2f6f3e':'#c0504d'}">(${d.uplift_post>0?'+':''}${d.uplift_post}%)</span></td>
+     <td class="num">${d.uplift_day>0?'+':''}${d.uplift_day}%</td><td>${d.base_src}</td></tr>`).join('');
+}
+
+/* =========================================================
+   页面6 文本结论（静态）
+   ========================================================= */
+function renderInsights(){
+  const rs=LAST?LAST.repeat_stats:DATA.rfm_segment; // fallback
+  const IN=[
+    ['履约时效是满意度的第一杠杆，没有之一',
+      `延误送达的订单平均评分仅 <b>${fmt2((DATA.late_vs_score.find(x=>x.is_late==='延迟送达')||{}).avg_score)} 分</b>，1 星差评率高达 <b>${pct((DATA.late_vs_score.find(x=>x.is_late==='延迟送达')||{}).pct_1star)}</b>；而准时/提前送达的订单均分 <b>${fmt2((DATA.late_vs_score.find(x=>x.is_late==='准时/提前')||{}).avg_score)} 分</b>，1 星率仅 <b>${pct((DATA.late_vs_score.find(x=>x.is_late==='准时/提前')||{}).pct_1star)}</b>。`,'warn'],
+    ['增长完全依赖拉新，留存几乎不存在',
+      `复购客户占比极低，新客订单占比高达 <b>98%</b>，人均购买约 1 单。AOV 与 ARPU 几乎重合，正是"一人一单"的直接证据。这意味着获客成本无法被生命周期价值摊薄。`,'warn'],
+    ['市场高度集中于圣保罗州',
+      `SP 州贡献 GMV <b>R$ ${fmt((DATA.state_gmv[0]||{}).gmv)}</b>（占比 <b>${pct((DATA.state_gmv[0]||{}).gmv_share)}</b>），加上 RJ、MG 三州合计占绝大部分。区域集中度远高于一个全国性平台应有的水平。`,''],
+    ['供给端比需求端更集中',
+      `TOP10% 卖家贡献了 <b>${pct((DATA.seller_concentration||{}).top10pct_gmv_share)} 的 GMV</b>；卖家本身也集中在 SP 州。平台对头部卖家的依赖度很高。`,''],
+    ['商品页面质量与动销正相关',
+      `图片数 1 张的商品平均销量明显低于多图商品；描述长度在 500–1000 字符区间的商品动销最好。仍有大量商品零销量，平均图片数与描述长度均明显低于已售商品。`,'good'],
+    ['品类结构：健康美容与家居家纺双引擎',
+      `GMV 第一品类为 <b>${cn_cat(DATA.category[0].product_category_name_english)}</b>（${pct(DATA.category[0].gmv_share)}），销量第一为 <b>${cn_cat(DATA.category_top_qty[0].product_category_name_english)}</b>；典型高价低频品类需要不同的运营策略。`,''],
+  ];
+  document.getElementById('insights').innerHTML = IN.map((i,n)=>
+    `<div class="ins ${i[2]}"><b>${n+1}. ${i[0]}</b><br>${i[1]}</div>`).join('');
+  const RC=[
+    ['把履约时效当成核心 KPI 来管理','设定 20 天红线：对承诺时效超过 20 天的订单/线路强制预警或切换物流商。仅把 20 天以上订单压缩到 15 天内，按当前 1 星率差测算可挽回大量差评。'],
+    ['从"一次性买卖"转向留存运营','复购率极低意味着 LTV ≈ AOV。优先动作：收货后 30/60 天触发品类关联推荐；对 RFM 中的"高价值流失"分群做定向召回，这是投入产出比最高的一批人。'],
+    ['区域扩张：从 SP 向 RJ/MG 复制，再去中部','RJ 与 MG 已有规模但人均单量与 SP 差距明显，优先复制 SP 的品类与物流方案；对中部州先做轻资产试点，验证履约时效能否达标再放量。'],
+    ['商品页面质量治理','对零销量商品及图片数 ≤2 张的长尾商品强制补齐素材（目标 ≥5 张图 + 500 字以上描述），并设置新品上架的图片/描述门槛。'],
+    ['供给端风险管理','TOP10% 卖家贡献大部分 GMV，需建立头部卖家健康度监控（库存、时效、评分），同时用流量倾斜扶持腰部卖家，降低单点依赖。'],
+  ];
+  document.getElementById('recos').innerHTML = RC.map((r,n)=>
+    `<div class="ins good"><b>建议 ${n+1}. ${r[0]}</b><br>${r[1]}</div>`).join('');
+
+  const HIN=[
+    ['黑五是全期唯一的爆发点，量级碾压所有传统节日','黑五当天订单是基线的数倍，uplift 极高；而母亲节、父亲节等传统节日当天的 uplift 只有 ±20% 以内，圣诞和元旦甚至是负值。全年 GMV 的爆发高度依赖这一个节点。'],
+    ['大促有完整的预热与长尾，不是"一天行情"','黑五节前 7 日、节后 7 日均为正增长。黑五当周日均订单显著高于前一周，后一周仍维持高位。运营节奏应按"节前 7 天蓄水 → 当天引爆 → 节后 7 天收尾"三段设计。'],
+    ['传统节日是"当天跌、节后补"，投放要提前','元旦当天、圣诞、耶稣受难日节假日当天用户不上网购物，但节后 7 天普遍回补。父亲节更典型：节前 7 日、节后均大幅正增长，当天仅小幅上升——送礼型节点必须提前 7-10 天投放。'],
+    ['黑五不透支后续消费，是净增量','黑五后两周日均比黑五前一周还高。没有出现"大促后真空期"，说明黑五承接的是圣诞季的真实需求，而非提前透支。'],
+    ['大促靠"降低支付门槛"放量，不是靠提价','黑五客单价反而略降，但平均分期期数与信用卡占比上升。说明分期免息是巴西大促最有效的转化杠杆——建议把"分期期数"作为大促核心卖点。'],
+    ['黑五改变品类结构：实用耐用品上位','占比提升的是健康美容、床品浴室、电脑配件；占比下降的是潮流好物、运动休闲、园艺工具。大促时用户倾向购买单价高、日常刚需的商品。'],
+  ];
+  document.getElementById('hol_insights').innerHTML = HIN.map((i,n)=>
+    `<div class="ins ${n===4||n===5?'good':''}"><b>${n+1}. ${i[0]}</b><br>${i[1]}</div>`).join('');
+}
+
+/* =========================================================
+   切片器 UI 与交互
+   ========================================================= */
+const YEARS=['all',2016,2017,2018];
+function buildSlicers(){
+  // 年份
+  const yc=document.getElementById('slYear');
+  YEARS.forEach(y=>{
+    const b=document.createElement('button'); b.textContent = y==='all'?'全部':y+' 年';
+    b.dataset.y=y; if(y==='all')b.classList.add('on');
+    b.onclick=()=>{ FILTER.year = (y==='all'?'all':y);
+      [...yc.children].forEach(x=>x.classList.toggle('on',x.dataset.y===(''+y))); renderAll(); };
+    yc.appendChild(b);
+  });
+  // 品类下拉
+  const sel=document.getElementById('slCat');
+  const opt0=document.createElement('option'); opt0.value=''; opt0.textContent='全部品类'; sel.appendChild(opt0);
+  CATS.forEach((name,idx)=>{const o=document.createElement('option');o.value=idx;o.textContent=cn_cat(idx);sel.appendChild(o);});
+  sel.onchange=()=>{ FILTER.cats.clear(); if(sel.value!=='')FILTER.cats.add(+sel.value); renderAll(); };
+  // 州多选弹窗
+  const pop=document.getElementById('slStatePop');
+  STATES.forEach((name,idx)=>{const l=document.createElement('label');
+    const cb=document.createElement('input'); cb.type='checkbox'; cb.value=idx;
+    cb.onchange=()=>{ if(cb.checked)FILTER.states.add(idx); else FILTER.states.delete(idx); renderAll(); };
+    l.appendChild(cb); l.appendChild(document.createTextNode(' '+cn_state(idx))); pop.appendChild(l);});
+  const foot=document.createElement('div'); foot.className='pop-foot';
+  const all=document.createElement('button'); all.textContent='全选'; all.onclick=()=>{FILTER.states=new Set(STATES.map((_,i)=>i));pop.querySelectorAll('input').forEach(c=>c.checked=true);renderAll();};
+  const clr=document.createElement('button'); clr.textContent='清空'; clr.onclick=()=>{FILTER.states.clear();pop.querySelectorAll('input').forEach(c=>c.checked=false);renderAll();};
+  foot.appendChild(all); foot.appendChild(clr); pop.appendChild(foot);
+  document.getElementById('slStateBtn').onclick=(e)=>{ e.stopPropagation(); pop.classList.toggle('show'); };
+  document.addEventListener('click',()=>pop.classList.remove('show'));
+  pop.onclick=e=>e.stopPropagation();
+  // 重置
+  document.getElementById('slReset').onclick=()=>{
+    FILTER.year='all'; FILTER.states.clear(); FILTER.cats.clear();
+    [...yc.children].forEach(x=>x.classList.toggle('on',x.dataset.y==='all'));
+    sel.value=''; pop.querySelectorAll('input').forEach(c=>c.checked=false);
+    renderAll();
+  };
+}
+function updateFilterInfo(){
+  const parts=[];
+  if(FILTER.year!=='all')parts.push('年份=<b>'+FILTER.year+'</b>');
+  if(FILTER.states.size)parts.push('州=<b>'+[...FILTER.states].map(i=>cn_state(i)).join('、')+'</b>');
+  if(FILTER.cats.size)parts.push('品类=<b>'+[...FILTER.cats].map(i=>cn_cat(i)).join('、')+'</b>');
+  document.getElementById('filterInfo').innerHTML = parts.length? ('当前筛选：'+parts.join('；')) : '当前：<b>全量数据</b>';
+}
+function showErr(m){const e=document.getElementById('errbar');e.style.display='block';e.textContent='⚠ '+m;}
+
+/* =========================================================
+   导航 / 初始化
+   ========================================================= */
+const PAGES=['① 运营总览','② 客户行为','③ 商品分析','④ 履约与卖家','⑤ 节假日与大促','⑥ 管理层摘要'];
+const nav=document.getElementById('nav');
+PAGES.forEach((p,i)=>{const b=document.createElement('button');b.textContent=p;b.onclick=()=>show(i);nav.appendChild(b);});
+function show(i){
+  document.querySelectorAll('.page').forEach((s,j)=>s.classList.toggle('active',i===j));
+  [...nav.children].forEach((b,j)=>b.classList.toggle('active',i===j));
+  // 节假日页(4)不受全局切片器影响，切过去时整条隐藏，避免误导
+  document.getElementById('slicer').style.display=(i===4)?'none':'';
+  setTimeout(()=>{for(const k in CH)CH[k].resize();},30);
+}
+nav.children[0].classList.add('active');
+
+window.addEventListener('resize',()=>{for(const k in CH)CH[k].resize();});
+// 点击州柱 / 品类柱 -> 下钻切换筛选
+function wireClicks(){
+  if(CH.c_state)CH.c_state.on('click',p=>{ if(p.data&&p.data.code!=null){ const c=p.data.code;
+    if(FILTER.states.has(c))FILTER.states.delete(c); else {FILTER.states.clear();FILTER.states.add(c);}
+    syncSlicers(); renderAll(); }});
+  if(CH.c_cat_gmv)CH.c_cat_gmv.on('click',p=>{ if(p.data&&p.data.code!=null){ const c=p.data.code;
+    if(FILTER.cats.has(c))FILTER.cats.delete(c); else {FILTER.cats.clear();FILTER.cats.add(c);}
+    syncSlicers(); renderAll(); }});
+  if(CH.c_cat_qty)CH.c_cat_qty.on('click',p=>{ if(p.data&&p.data.code!=null){ const c=p.data.code;
+    if(FILTER.cats.has(c))FILTER.cats.delete(c); else {FILTER.cats.clear();FILTER.cats.add(c);}
+    syncSlicers(); renderAll(); }});
+}
+function syncSlicers(){
+  const yc=document.getElementById('slYear');
+  [...yc.children].forEach(x=>x.classList.toggle('on',(''+FILTER.year)===(x.dataset.y)));
+  const sel=document.getElementById('slCat'); sel.value=FILTER.cats.size===1?([...FILTER.cats][0]):'';
+  const pop=document.getElementById('slStatePop');
+  pop.querySelectorAll('input').forEach(c=>c.checked=FILTER.states.has(+c.value));
+}
+
+let LAST=null;
+function init(){
+  try{
+    document.getElementById('metaLine').textContent =
+      `数据区间 ${DATA.kpi.date_min} ~ ${DATA.kpi.date_max}　|　建模：1 张订单事实表 + 1 张明细事实表 + 5 张维度表　|　看板支持年份/州/品类切片器与图表联动`;
+    document.getElementById('foot').innerHTML =
+      '口径说明：GMV = 商品金额 + 运费（不含未交付订单）；复购/RFM/新老客均以 customer_unique_id 为真实客户标识；'+
+      '趋势图灰色区间为样本不完整月份（2016-09~12 爬坡期、2018-09~10 数据截断），不参与同比判断。'+
+      '本看板所有图表随顶部切片器实时重算（基于 11.2 万行明细事实表）。';
+    buildSlicers();
+    renderAll();
+    renderHoliday();
+    renderInsights();
+    // 联动 tooltip：同组图表共享 axisPointer
+    echarts.connect('g_p1'); echarts.connect('g_p2');
+    wireClicks();
+    updateFilterInfo();
+  }catch(e){ showErr('初始化异常：'+e.message); console.error(e); }
+}
+init();
+</script>
+</body>
+</html>

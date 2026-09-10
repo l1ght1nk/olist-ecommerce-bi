@@ -1,0 +1,98 @@
+{
+  "name": "Olist BI 主题",
+  "dataColors": [
+    "#2F6F3E",
+    "#4A90D9",
+    "#E8A33D",
+    "#8E6BB5",
+    "#3AA8A0",
+    "#C0504D",
+    "#5A9455",
+    "#7FB069"
+  ],
+  "good": "#2F6F3E",
+  "neutral": "#E8A33D",
+  "bad": "#C0504D",
+  "maximum": "#2F6F3E",
+  "center": "#E8A33D",
+  "minimum": "#C0504D",
+  "background": "#FFFFFF",
+  "secondaryBackground": "#F5F6F8",
+  "foreground": "#1F2937",
+  "foregroundNeutralSecondary": "#374151",
+  "foregroundNeutralTertiary": "#6B7280",
+  "tableAccent": "#2F6F3E",
+  "textClasses": {
+    "largeTitle": { "fontFace": "微软雅黑", "fontSize": 20, "color": "#1F2937" },
+    "title": { "fontFace": "微软雅黑", "fontSize": 14, "color": "#1F2937" },
+    "header": { "fontFace": "微软雅黑", "fontSize": 12, "color": "#1F2937" },
+    "label": { "fontFace": "微软雅黑", "fontSize": 11, "color": "#374151" },
+    "callout": { "fontFace": "微软雅黑", "fontSize": 28, "color": "#1F2937" },
+    "smallLabel": { "fontFace": "微软雅黑", "fontSize": 10, "color": "#6B7280" }
+  },
+  "visualStyles": {
+    "*": {
+      "*": {
+        "background": [{ "show": true, "color": { "solid": { "color": "#FFFFFF" } }, "transparency": 0 }],
+        "border": [{ "show": true, "color": { "solid": { "color": "#E6E8EB" } }, "radius": 8 }],
+        "dropShadow": [{ "show": false }],
+        "title": [
+          {
+            "show": true,
+            "fontColor": { "solid": { "color": "#1F2937" } },
+            "background": { "solid": { "color": "#FFFFFF" } },
+            "fontSize": 13,
+            "fontFamily": "微软雅黑",
+            "alignment": "left"
+          }
+        ],
+        "categoryAxis": [
+          {
+            "showAxisTitle": false,
+            "gridlineShow": false,
+            "labelColor": { "solid": { "color": "#1F2937" } },
+            "fontSize": 11,
+            "fontFamily": "微软雅黑"
+          }
+        ],
+        "valueAxis": [
+          {
+            "showAxisTitle": false,
+            "gridlineShow": true,
+            "gridlineColor": { "solid": { "color": "#EEF0F2" } },
+            "gridlineThickness": 1,
+            "gridlineStyle": "solid",
+            "labelColor": { "solid": { "color": "#1F2937" } },
+            "fontSize": 11,
+            "fontFamily": "微软雅黑"
+          }
+        ],
+        "legend": [
+          {
+            "show": true,
+            "position": "Top",
+            "showTitle": false,
+            "labelColor": { "solid": { "color": "#1F2937" } },
+            "fontSize": 11,
+            "fontFamily": "微软雅黑"
+          }
+        ],
+        "labels": [
+          {
+            "color": { "solid": { "color": "#1F2937" } },
+            "fontSize": 11,
+            "fontFamily": "微软雅黑"
+          }
+        ],
+        "visualHeader": [{ "show": true }]
+      }
+    },
+    "page": {
+      "*": {
+        "background": [{ "color": { "solid": { "color": "#F5F6F8" } }, "transparency": 0 }],
+        "outspacePane": [{ "background": { "solid": { "color": "#F5F6F8" } }, "transparency": 0 }],
+        "wallpaper": [{ "transparency": 0 }]
+      }
+    }
+  }
+}

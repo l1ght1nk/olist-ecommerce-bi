@@ -1,0 +1,254 @@
+
+======================================================================
+### customers  shape=(99441, 5)
+columns: ['customer_id', 'customer_unique_id', 'customer_zip_code_prefix', 'customer_city', 'customer_state']
+missing%:
+   无缺失
+                        customer_id                customer_unique_id  customer_zip_code_prefix          customer_city customer_state
+0  06b8999e2fba1a1fbc88172c00ba8bc7  861eff4711a542e4b93843c6dd7febb0                     14409                 franca             SP
+1  18955e83d337fd6b2def6b18a428ac77  290c77bc529b7ac935b93aa66c333dc3                      9790  sao bernardo do campo             SP
+2  4e7b3e00288586ebd08712fdd0374a03  060e732b5b29e8181a18229c7b0b2b5e                      1151              sao paulo             SP
+
+======================================================================
+### geolocation  shape=(1000163, 5)
+columns: ['geolocation_zip_code_prefix', 'geolocation_lat', 'geolocation_lng', 'geolocation_city', 'geolocation_state']
+missing%:
+   无缺失
+   geolocation_zip_code_prefix  geolocation_lat  geolocation_lng geolocation_city geolocation_state
+0                         1037       -23.545621       -46.639292        sao paulo                SP
+1                         1046       -23.546081       -46.644820        sao paulo                SP
+2                         1046       -23.546129       -46.642951        sao paulo                SP
+
+======================================================================
+### order_items  shape=(112650, 7)
+columns: ['order_id', 'order_item_id', 'product_id', 'seller_id', 'shipping_limit_date', 'price', 'freight_value']
+missing%:
+   无缺失
+                           order_id  order_item_id                        product_id                         seller_id  shipping_limit_date  price  freight_value
+0  00010242fe8c5a6d1ba2dd792cb16214              1  4244733e06e7ecb4970a6e2683c13e61  48436dade18ac8b2bce089ec2a041202  2017-09-19 09:45:35   58.9          13.29
+1  00018f77f2f0320c557190d7a144bdd3              1  e5f2d52b802189ee658865ca93d83a8f  dd7ddc04e1b6c2c614352b383efe2d36  2017-05-03 11:05:13  239.9          19.93
+2  000229ec398224ef6ca0657da4fc703e              1  c777355d18b72b67abbeef9df44fd0fd  5b51032eddd242adc84c38acab88f23d  2018-01-18 14:48:30  199.0          17.87
+
+======================================================================
+### payments  shape=(103886, 5)
+columns: ['order_id', 'payment_sequential', 'payment_type', 'payment_installments', 'payment_value']
+missing%:
+   无缺失
+                           order_id  payment_sequential payment_type  payment_installments  payment_value
+0  b81ef226f3fe1789b1e8b2acac839d17                   1  credit_card                     8          99.33
+1  a9810da82917af2d9aefd1278f1dcfa0                   1  credit_card                     1          24.39
+2  25e8ea4e93396b6fa0d3dd708e76c1bd                   1  credit_card                     1          65.71
+
+======================================================================
+### reviews  shape=(99224, 7)
+columns: ['review_id', 'order_id', 'review_score', 'review_comment_title', 'review_comment_message', 'review_creation_date', 'review_answer_timestamp']
+missing%:
+ review_comment_title      88.34
+review_comment_message    58.70
+dtype: float64
+                          review_id                          order_id  review_score review_comment_title review_comment_message review_creation_date review_answer_timestamp
+0  7bc2406110b926393aa56f80a40eba40  73fc7af87114b39712e6da79b0a377eb             4                  NaN                    NaN  2018-01-18 00:00:00     2018-01-18 21:46:59
+1  80e641a11e56f04c1ad469d5645fdfde  a548910a1c6147796b98fdf73dbeba33             5                  NaN                    NaN  2018-03-10 00:00:00     2018-03-11 03:05:13
+2  228ce5500dc1d8e020d8d1322874b6f0  f9e4b658b201a9f2ecdecbb34bed034b             5                  NaN                    NaN  2018-02-17 00:00:00     2018-02-18 14:36:24
+
+======================================================================
+### orders  shape=(99441, 8)
+columns: ['order_id', 'customer_id', 'order_status', 'order_purchase_timestamp', 'order_approved_at', 'order_delivered_carrier_date', 'order_delivered_customer_date', 'order_estimated_delivery_date']
+missing%:
+ order_approved_at                0.16
+order_delivered_carrier_date     1.79
+order_delivered_customer_date    2.98
+dtype: float64
+                           order_id                       customer_id order_status order_purchase_timestamp    order_approved_at order_delivered_carrier_date order_delivered_customer_date order_estimated_delivery_date
+0  e481f51cbdc54678b7cc49136f2d6af7  9ef432eb6251297304e76186b10a928d    delivered      2017-10-02 10:56:33  2017-10-02 11:07:15          2017-10-04 19:55:00           2017-10-10 21:25:13           2017-10-18 00:00:00
+1  53cdb2fc8bc7dce0b6741e2150273451  b0830fb4747a6c6d20dea0b8c802d7ef    delivered      2018-07-24 20:41:37  2018-07-26 03:24:27          2018-07-26 14:31:00           2018-08-07 15:27:45           2018-08-13 00:00:00
+2  47770eb9100c2d0c44946d9cf07ec65d  41ce2a54c0b03bf3443c3d931a367089    delivered      2018-08-08 08:38:49  2018-08-08 08:55:23          2018-08-08 13:50:00           2018-08-17 18:06:29           2018-09-04 00:00:00
+
+======================================================================
+### products  shape=(32951, 9)
+columns: ['product_id', 'product_category_name', 'product_name_lenght', 'product_description_lenght', 'product_photos_qty', 'product_weight_g', 'product_length_cm', 'product_height_cm', 'product_width_cm']
+missing%:
+ product_category_name         1.85
+product_name_lenght           1.85
+product_description_lenght    1.85
+product_photos_qty            1.85
+product_weight_g              0.01
+product_length_cm             0.01
+product_height_cm             0.01
+product_width_cm              0.01
+dtype: float64
+                         product_id product_category_name  product_name_lenght  product_description_lenght  product_photos_qty  product_weight_g  product_length_cm  product_height_cm  product_width_cm
+0  1e9e8ef04dbcff4541ed26657ea517e5            perfumaria                 40.0                       287.0                 1.0             225.0               16.0               10.0              14.0
+1  3aa071139cb16b67ca9e5dea641aaa2f                 artes                 44.0                       276.0                 1.0            1000.0               30.0               18.0              20.0
+2  96bd76ec8810374ed1b65e291975717f         esporte_lazer                 46.0                       250.0                 1.0             154.0               18.0                9.0              15.0
+
+======================================================================
+### sellers  shape=(3095, 4)
+columns: ['seller_id', 'seller_zip_code_prefix', 'seller_city', 'seller_state']
+missing%:
+   无缺失
+                          seller_id  seller_zip_code_prefix     seller_city seller_state
+0  3442f8959a84dea7ee197c632cb2df15                   13023        campinas           SP
+1  d1b65fc7debc3361ea86b5f14c68d2e2                   13844      mogi guacu           SP
+2  ce3ad9de960102d0677a81f5d0bb7b2d                   20031  rio de janeiro           RJ
+
+======================================================================
+### category_tr  shape=(71, 2)
+columns: ['product_category_name', 'product_category_name_english']
+missing%:
+   无缺失
+    product_category_name product_category_name_english
+0            beleza_saude                 health_beauty
+1  informatica_acessorios         computers_accessories
+2              automotivo                          auto
+
+======================================================================
+### 主键唯一性检查
+customers: ['customer_id']  行数=99441  唯一组合=99441  重复=0
+orders: ['order_id']  行数=99441  唯一组合=99441  重复=0
+order_items: ['order_id', 'order_item_id']  行数=112650  唯一组合=112650  重复=0
+products: ['product_id']  行数=32951  唯一组合=32951  重复=0
+sellers: ['seller_id']  行数=3095  唯一组合=3095  重复=0
+geolocation: ['geolocation_zip_code_prefix']  行数=1000163  唯一组合=19015  重复=981148
+
+======================================================================
+### orders 订单状态分布
+order_status
+delivered      96478
+shipped         1107
+canceled         625
+unavailable      609
+invoiced         314
+processing       301
+created            5
+approved           2
+Name: count, dtype: int64
+
+======================================================================
+### orders 日期字段范围与缺失
+order_purchase_timestamp: 缺失=0  范围=2016-09-04 21:15:19 ~ 2018-10-17 17:30:18
+order_delivered_carrier_date: 缺失=1783  范围=2016-10-08 10:34:01 ~ 2018-09-11 19:48:28
+order_delivered_customer_date: 缺失=2965  范围=2016-10-11 13:46:32 ~ 2018-10-17 13:22:46
+order_estimated_delivery_date: 缺失=0  范围=2016-09-30 00:00:00 ~ 2018-11-12 00:00:00
+
+======================================================================
+### order_items 数值分布
+               price  freight_value
+count  112650.000000  112650.000000
+mean      120.653739      19.990320
+std       183.633928      15.806405
+min         0.850000       0.000000
+25%        39.900000      13.080000
+50%        74.990000      16.260000
+75%       134.900000      21.150000
+max      6735.000000     409.680000
+
+======================================================================
+### payments
+payment_type
+credit_card    76795
+boleto         19784
+voucher         5775
+debit_card      1529
+not_defined        3
+Name: count, dtype: int64
+每订单付款记录数分布: {1: 96479, 2: 2382, 3: 301, 4: 108, 5: 52}
+payment_sequential 唯一性(用于检查同订单多笔): 0
+
+======================================================================
+### reviews
+review_score
+1    11424
+2     3151
+3     8179
+4    19142
+5    57328
+Name: count, dtype: int64
+每订单评论数: {1: 98126, 2: 543, 3: 4}
+
+======================================================================
+### products 品类
+product_category_name 唯一数: 73
+       product_weight_g  product_length_cm  product_height_cm  product_width_cm
+count      32949.000000       32949.000000       32949.000000      32949.000000
+mean        2276.472488          30.815078          16.937661         23.196728
+std         4282.038731          16.914458          13.637554         12.079047
+min            0.000000           7.000000           2.000000          6.000000
+25%          300.000000          18.000000           8.000000         15.000000
+50%          700.000000          25.000000          13.000000         20.000000
+75%         1900.000000          38.000000          21.000000         30.000000
+max        40425.000000         105.000000         105.000000        118.000000
+
+======================================================================
+### customers 地理
+customer_state 分布:
+ customer_state
+SP    41746
+RJ    12852
+MG    11635
+RS     5466
+PR     5045
+SC     3637
+BA     3380
+DF     2140
+ES     2033
+GO     2020
+Name: count, dtype: int64
+customer_city 唯一: 4119
+
+======================================================================
+### sellers 地理
+seller_state 分布:
+ seller_state
+SP    1849
+PR     349
+MG     244
+SC     190
+RJ     171
+RS     129
+GO      40
+DF      30
+ES      23
+BA      19
+Name: count, dtype: int64
+
+======================================================================
+### geolocation
+zip prefix 唯一: 19015 行数: 1000163
+geolocation_state
+SP    404268
+MG    126336
+RJ    121169
+RS     61851
+PR     57859
+SC     38328
+BA     36045
+GO     20139
+ES     16748
+PE     16432
+Name: count, dtype: int64
+
+======================================================================
+### 关联完整性
+order_items.order_id 在 orders 中缺失: 0
+orders.order_id 在 order_items 中缺失: 775
+orders.customer_id 在 customers 中缺失: 0
+order_items.product_id 在 products 中缺失: 0
+order_items.seller_id 在 sellers 中缺失: 0
+
+订单成交时间范围: 2016-09-04 21:15:19 ~ 2018-10-17 17:30:18
+按月订单量(前12月):
+ order_purchase_timestamp
+2016-09       4
+2016-10     324
+2016-12       1
+2017-01     800
+2017-02    1780
+2017-03    2682
+2017-04    2404
+2017-05    3700
+2017-06    3245
+2017-07    4026
+2017-08    4331
+2017-09    4285
+Freq: M, Name: count, dtype: int64
