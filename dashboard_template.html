@@ -375,6 +375,11 @@ const sum  = a => a.reduce((x,y)=>x+y,0);
 /* ---------------- 颜色 ---------------- */
 const C = {green:'#2f6f3e',light:'#7fb069',blue:'#4a90d9',orange:'#e8a33d',red:'#c0504d',
            gray:'#9aa1a9',purple:'#8e6bb5',teal:'#3aa8a0'};
+// 订单状态固定配色：按状态名取色，避免用数组下标取色时
+// 「某状态订单数变为 0 / 由 0 变为非 0」导致整个饼图配色错位
+const STATUS_COLOR = {delivered:C.green, shipped:C.blue, invoiced:C.orange,
+                      processing:C.purple, created:C.light, approved:C.teal,
+                      canceled:C.red, unavailable:C.gray};
 const AXIS = {axisLine:{lineStyle:{color:'#dfe3e8'}},axisLabel:{color:'#1f2937',fontSize:11},
               splitLine:{lineStyle:{color:'#f0f2f4'}}};
 
@@ -655,9 +660,9 @@ function renderAll(){
     tooltip:{trigger:'item',formatter:p=>`${p.name}<br/>${fmt(p.value)} 单 (${p.percent}%)`},
     legend:{bottom:0,textStyle:{fontSize:11}},
     series:[{type:'pie',radius:['38%','62%'],center:['50%','44%'],
-      data:A.order_status.map(d=>({name:cn_status(d.order_status),value:d.orders})),
+      data:A.order_status.map(d=>({name:cn_status(d.order_status),value:d.orders,
+        itemStyle:{color:STATUS_COLOR[d.order_status]||C.gray}})),
       itemStyle:{borderColor:'#fff',borderWidth:2},
-      color:[C.green,C.blue,C.red,C.orange,C.gray,C.light,C.purple,C.teal],
       label:{formatter:'{b}\n{d}%',fontSize:11}}]
   });
   // 每日订单（时间轴：自动均匀分布日期刻度）
