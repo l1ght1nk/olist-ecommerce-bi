@@ -132,6 +132,32 @@ for r in load_csv(os.path.join(OUT, 'fact_order_items.csv')):
         rfseg, rsc, fsc, msc,
     ])
 
+# ---------- 补齐「无商品明细行」的订单 ----------
+# fact_order_items 里没有任何记录的订单（下单即取消 / 不可用等），如果只按 item 循环
+# 输出，这些订单会整单丢失，导致**基于订单数**的指标分母偏小：
+#   交付完成率 = 96,478 / 98,666 = 97.78%   ← 错误（与 SQL / Power BI 的 97.02% 不一致）
+#   正确       = 96,478 / 99,441 = 97.02%
+# 订单状态构成、各州交付率同样会少算这部分订单。
+# 补一条无商品、无金额的占位记录，让订单级去重计数与 fact_orders 对齐。
+# 说明：这些订单全部未交付（已交付的 96,478 单都有明细行），所以不会污染
+#       「已交付口径」的任何金额 / 明细 / 客户指标（那些聚合都走 del / delOrders）。
+#       品类、卖家、商品三列填 -1 占位——无明细即无法归属，按品类筛选时自然被排除。
+items_oid = set(oid_map.keys())
+orphan = 0
+for oid, a in order_attr.items():
+    if oid in items_oid:
+        continue
+    oid_map[oid] = len(oid_map)
+    _, _, rsc, fsc, msc, rfseg = cust_loc.get(a['cu'], ('UNK', 'unknown', 0, 0, 0, 0))
+    rows.append([
+        a['date_id'], a['state'], -1, uid(a['cu']), oid_map[oid],
+        0, 0, a['delivered'], a['deliv_d'], a['is_late'], a['delay'],
+        a['review'], a['pay'], a['inst'], a['hour'], a['wday'], a['is_new'],
+        a['status'], a['city'], -1, -1,
+        rfseg, rsc, fsc, msc,
+    ])
+    orphan += 1
+
 # ---------- 月份维度（含完整性标记）----------
 yms = sorted({a['ym'] for a in order_attr.values()})
 ym_info = []
@@ -155,7 +181,7 @@ with open(os.path.join(OUT, 'fact_compact.json'), 'w', encoding='utf-8') as f:
     json.dump(out, f, separators=(',', ':'), ensure_ascii=False)
 
 sz = os.path.getsize(os.path.join(OUT, 'fact_compact.json')) / 1024 / 1024
-print(f"行数(明细): {len(rows)}  跳过: {empty}")
+print(f"行数(明细): {len(rows) - orphan}  补齐无明细订单: {orphan}  跳过: {empty}")
 print(f"维度: states={len(states)} cats={len(cats)} pays={len(pays)} "
       f"statuses={len(statuses)} cities={len(cities)} sellers={len(sellers)} products={len(products)} segments={len(segments)}")
 print(f"uid={len(uid_map)} oid={len(oid_map)}")
